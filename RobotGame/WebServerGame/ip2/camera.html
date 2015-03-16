@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="Shift-JIS">
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />  
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<title>V-SidoWeb Camera</title>
+
+	<link rel="stylesheet" href="./libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
+	<script src="./libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="./libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+	<script src="./libs/jquery/jquery.ui.touch-punch.min.js"></script>
+	<script src="./libs/common.js"></script>
+	<link rel="stylesheet" href="./libs/common.css" />
+	
+	<!-- Edison -->
+	<script src="./js/vsido.camera.js"></script>
+	
+	<script>
+	$(function(){
+		var camera=null;
+		var qparam=getUrlVars()['setip'];
+		if(qparam){
+			camera=new VSidoCamera({'ip':qparam});
+		}else{
+			camera=new VSidoCamera();
+		}
+		camera.viewRaw($('#camera_raw'));
+		camera.viewMarkerDetect($('#vsido_camera_marker'));	
+	});
+	</script>
+
+	<style>
+	h1{display:none;}
+	#camera_raw,#vsido_camera_marker{
+		border:1px solid white;
+		width:320px;
+		height:240px;
+	}
+	#camera-div{
+		width:100%;
+		height:100%;
+		text-align:center;
+		margin:5px auto;
+	}
+	</style>
+</head>
+
+<body>
+	<div id="nav-ip">
+		<br>
+		<h2>IPアドレス</h2>
+		<input type="text" id="ip-1" value="">
+		<input type="text" id="ip-2" value="">
+		<input type="text" id="ip-3" value="">
+		<input type="text" id="ip-4" value="">
+		<div id="ipset">設定</div>
+	</div>
+	<div id="nav-div">
+		<div class="mainbtn" data-id="0" title="">ホームに戻る</div>
+	</div>
+	<div id="content-div">
+		<h2>カメラ出力</h2>
+		<div id="camera-div">
+			<img src="" id="camera_raw">
+			<img src="" id="vsido_camera_marker">
+		</div>		
+	</div>
+	<div id="info-div">
+	<div>
+	<div class="spacer"></div>
+</body>
+</html>

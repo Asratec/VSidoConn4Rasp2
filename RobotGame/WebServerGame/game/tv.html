@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="Shift-JIS">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui">
+	<meta name="apple-mobile-web-app-title" content="V-SidoWeb Game TV">
+	<title>V-SidoWeb Game TV</title>
+	
+	<script src="./libs/jquery/2.1.3/jquery.min.js"></script>
+	<link rel="stylesheet" href="./libs/jquerymobile/1.4.3/jquery.mobile.min.css" />
+	<script src="./libs/jquerymobile/1.4.3/jquery.mobile.min.js"></script>
+	
+	<link rel="stylesheet" href="./libs/common.css" />	
+	<script src="../ip2/libs/common.js"></script>
+	
+	<!-- V-SidoWeb -->
+	<script src="./js/vsido.camera.js"></script>
+	<script>
+	
+	var s_edison_ip_enemy='192.168.11.2';	// デフォルト
+	var qparam=getUrlVars()['enemyip'];
+	if(qparam){
+		s_edison_ip_enemy=qparam;
+	}
+
+	$(function(){
+		//s_camera_player1=new VSidoCamera({'ip':'192.168.11.2'});	// ■自ロボットipの設定
+		s_camera_player1=new VSidoCamera();
+		s_camera_player1.viewRaw($('#camera-image-player1'));
+		//s_camera_player1.viewMarkerDetect($('#camera-image-player1')); //　マーカー検出付きの場合
+	
+		s_camera_player2=new VSidoCamera({'ip':s_edison_ip_enemy});
+		s_camera_player2.viewRaw($('#camera-image-player2'));
+		//s_camera_player2.viewMarkerDetect($('#camera-image-player2')); //　マーカー検出付きの場合
+	});
+	</script>
+
+	<style>
+	html,body{
+		width:100%;
+		height:100%;
+		margin:0px;
+		padding:0px;
+		background:black;
+	}
+	
+	#camera-image-player1,#camera-image-player2{
+		position:fixed;
+		top:0px;
+		z-index:1;
+	}
+	#camera-image-player1{
+		left:0px;
+		width:50%;
+	}
+	#camera-image-player2{
+		right:0px;
+		width:50%;
+	}	
+	
+	#player1,#player2{
+		top:5px;
+		position:absolute;
+		font-size:20px;
+		z-index:2;
+	}
+	#player1{
+		left:2%;
+		font-weight:bold;
+		color:blue;
+	}
+	#player2{
+		left:52%;
+		font-weight:bold;
+		color:red;
+	}
+	</style>
+</head>
+
+<body>
+	<img id="camera-image-player1" src="#" />
+	<img id="camera-image-player2" src="#" />
+	<span id="player1">Player1</span>
+	<span id="player2">Player2</span>
+</body>
+</html>

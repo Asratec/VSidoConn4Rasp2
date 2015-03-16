@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="Shift-JIS">
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />  
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<title>V-SidoWeb Inverse Kinematics</title>
+	
+	<link rel="stylesheet" href="./libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
+	<script src="./libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="./libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+	<script src="./libs/jquery/jquery.ui.touch-punch.min.js"></script>
+	<script src="./libs/common.js"></script>
+	<link rel="stylesheet" href="./libs/common.css" />
+	
+	<!-- V-SidoWeb Apiの挿入 -->
+	<script src="./js/vsido.web.js"></script>
+	
+	<script>
+	$(function(){
+		var vsido=null;
+		var qparam=getUrlVars()['setip'];
+		if(qparam){
+			vsido=new VSidoWeb({'ip':qparam});
+		}else{
+			vsido=new VSidoWeb();
+		}
+		
+		var CONST_VAR={
+			HALF_GRID_SIZE:138,
+		};
+		
+		var s_slider_value=0;
+		var s_x_value=0;
+		var s_z_value=0;
+		var s_event_flags=0;
+		var s_ik=vsido.ik();
+		s_ik['ikf']['dist']['pos']=true;
+
+		function setflag(){s_event_flags=1;}
+		function resetflags(){s_event_flags=0;}
+		function mainloop(){
+			if(!s_event_flags) return;
+			
+			s_ik['kdts']=[];
+			var kdt=vsido.kdt();			
+			kdt['kid']=parseInt($('#servo-id').val(),10);
+			kdt['kdt']['pos']['x']=s_x_value;
+			kdt['kdt']['pos']['y']=s_slider_value;
+			kdt['kdt']['pos']['z']=s_z_value;
+			s_ik['kdts'].push(kdt);
+			vsido.send(s_ik);
+			resetflags();
+			$('#info-div').text(s_x_value+" - "+s_slider_value+" - "+s_z_value);
+		}
+		$('#servo-id').on('change',function(){
+			$('#grid-cursor').css({
+				'top':'138px',
+				'left':'138px'
+			});
+			var currdeg=0;
+			$("#common-slider").slider('value',currdeg);
+			$("#z-val").text(currdeg);
+		});
+		$('#grid-cursor').draggable({
+			containment:"parent",
+			drag:function(event,ui){
+				s_x_value=Math.floor((100*(ui.position.left-CONST_VAR.HALF_GRID_SIZE)/CONST_VAR.HALF_GRID_SIZE));
+				s_z_value=-Math.floor((100*(ui.position.top-CONST_VAR.HALF_GRID_SIZE)/CONST_VAR.HALF_GRID_SIZE));
+				console.log(s_x_value+" - "+s_z_value);
+				setflag();
+			},
+		});
+		$('#common-slider').slider({
+			min:-100,
+			max:100,
+			slide:function(event,ui){
+				var percent=ui.value;
+				s_slider_value=percent;
+				$("#z-val").text(percent);
+				setflag();
+			},
+		});
+		
+		var s_timer=null;
+		window.onload=function(){
+			//1秒間66回
+			s_timer=setInterval(mainloop,15);
+		};
+		window.onbeforeunload=function(){
+			clearInterval(s_timer);
+		};
+	});
+	</script>
+
+	<style>
+	h1{display:none;}
+	#servo-id{
+		width:7em;
+		font-size:20px;
+		font-weight:bold;
+	}
+	#content-div{
+		margin:5px auto;
+		display:table;
+	}
+	#ik-div{display:table-row;}
+	#grid{
+		width:316px;
+		height:316px;
+		border:1px solid white;
+	}
+	#grid-cursor{
+		top:138px;
+		left:138px;
+		width:40px;
+		height:40px;
+		background:red;
+	}
+	</style>
+</head>
+
+<body>
+	<div id="nav-ip">
+		<br>
+		<h2>IPアドレス</h2>
+		<input type="text" id="ip-1" value="">
+		<input type="text" id="ip-2" value="">
+		<input type="text" id="ip-3" value="">
+		<input type="text" id="ip-4" value="">
+		<div id="ipset">設定</div>
+	</div>
+	<div id="nav-div">
+		<div class="mainbtn" data-id="0" title="">ホームに戻る</div>
+	</div>
+	<div id="content-div">
+		<h2>パーツ選択</h2>
+		<select id="servo-id" class="ui-selectmenu-text">
+			<option value="0">体幹</option>
+			<option value="1" selected>頭部中心</option>
+			<option value="2">右手</option>
+			<option value="3">左手</option>
+			<option value="4">右足</option>
+			<option value="5">左足</option>
+		</select>
+		<div id="ik-div">
+			<br><br>
+			<div id="grid">
+				<div id="grid-cursor"></div>
+			</div>
+			<h2>Y軸 : <label id="z-val">0</label>%</h2>
+			<div id="common-slider"></div>
+		</div>
+	</div>
+	<div id="info-div"></div>
+	<div class="spacer"></div>
+	<div class="spacer"></div>
+</body>
+</html>

@@ -1,0 +1,3 @@
+#!/bin/sh
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/vsido/lib:/opt/vsido/usr/lib 
+/opt/vsido/usr/bin/VSido.srv

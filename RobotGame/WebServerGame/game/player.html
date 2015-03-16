@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="Shift-JIS">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui">
+	<meta name="apple-mobile-web-app-title" content="V-SidoWeb Game Demo">
+	<title>V-SidoWeb Game Demo</title>
+	
+	<script src="./libs/jquery/2.1.3/jquery.min.js"></script>
+	<link rel="stylesheet" href="./libs/jquerymobile/1.4.3/jquery.mobile.min.css" />
+	<script src="./libs/jquerymobile/1.4.3/jquery.mobile.min.js"></script>
+
+	<link rel="stylesheet" href="./libs/common.css" />	
+	<script src="../ip2/libs/common.js"></script>
+	
+	<!-- V-SidoWeb -->
+	<script src="./js/vsido.web.js"></script>
+	<script src="./js/vsido.camera.js"></script>
+	<script src="./js/vsido.r2r.js"></script>
+	
+	<script>
+	$(function(){
+		//var s_edison_ip='192.168.11.2';	// ■操作するロボットを指定・固定したい場合にipを定義
+		
+		var s_edison_ip_enemy='192.168.11.2';	// デフォルト
+		var qparam=getUrlVars()['enemyip'];
+		if(qparam){
+			s_edison_ip_enemy=qparam;
+		}
+
+		// 定義関連
+		var UI_CONST={
+			MOVE_GRID_HALF:60,
+			MOVE_GRID:120,
+			
+			TOP_PADDING_ALIGN:5,
+			RIGHT_PADDING_ALIGN:5,
+			BAR_HEIGHT:10,
+			BAR_SPACER:4,
+			
+			TEXT_HEIGHT_OFFSET:9,
+			
+			WIN_MSG:"YOU WIN!!!",
+			LOSE_MSG:"YOU LOSE!!!",
+			RESET_MSG:"",
+		};
+		var GAME_CONST={
+			MIN_ATTACKABLE_DISTANCE:4,
+			
+			MAX_DEVICE_ROT:60,
+			MINUS_CAMERA_ORI:300,
+			CAMERA_ROT_DELIMITER:Math.sin(59*Math.PI/180),
+			MAX_CAMERA_ROT:60,
+			
+			MAX_SHIELD:150,
+			MAX_POWER:150,
+			
+			ATK_POWER:20,
+			MIN_ATTACK_DAMAGE:10,
+			
+			TARGET_WIN_HEIGHT:120,			
+			TARGET_WIN_WIDTH:160,
+		};
+		var ROBOT_MODE={
+			UNACTIVE:0,
+			ACTIVE:1,
+		};
+		var PROCESS_FLAGS={
+			NONE:0,
+			MOTION:1 << 0,
+			CAMERA:1 << 1,
+			IK:1 << 2,
+		};
+		var CMD_TYPE={
+			NONE:0,
+			ATTACK:1,
+			WIN:2,
+			RESPAWN:3,
+		};
+		var SHOW_EFFECT={
+			NONE:0,
+			KNOCKOUT:1,
+			DAMAGE:2,
+			ATTACK:3,
+		};
+		var SHOW_EFFECT_FRAME={
+			DAMAGE:15,
+			ATTACK:3,
+		};
+		var APP_TIMER={
+			RENDER_LOOP:33,		// 描画ループ [ms]
+			CONTROL_LOOP:33,	// 制御ループ [ms]
+		};
+		var TIMER_TYPE={
+			RENDERER:0,
+			CONTROL:1,
+		};
+		
+		var CUSTOM_MOTION={
+			'lowerhands':{'inuse':false,'playframe':0,'motion':[{'kid':2,'dat':[
+			[0,0,-100]]
+			},{'kid':3,'dat':[
+			[0,0,-100]]
+			}]},
+			'crouch':{'inuse':false,'playframe':0,'motion':[{'kid':4,'dat':[
+			[0,0,-90],[0,0,-89],[0,0,-88],[0,0,-87],[0,0,-86],[0,0,-85],[0,0,-84],[0,0,-83],[0,0,-82],[0,0,-81],[0,0,-80],[0,0,-79],[0,0,-78],[0,0,-77],[0,0,-76],[0,0,-75],[0,0,-74],[0,0,-73],[0,0,-72],[0,0,-71],[0,0,-70],[0,0,-69],[0,0,-68],[0,0,-67],[0,0,-66],[0,0,-65],[0,0,-64],[0,0,-63],[0,0,-62],[0,0,-61],[0,0,-60]]
+			},{'kid':5,'dat':[
+			[0,0,-90],[0,0,-89],[0,0,-88],[0,0,-87],[0,0,-86],[0,0,-85],[0,0,-84],[0,0,-83],[0,0,-82],[0,0,-81],[0,0,-80],[0,0,-79],[0,0,-78],[0,0,-77],[0,0,-76],[0,0,-75],[0,0,-74],[0,0,-73],[0,0,-72],[0,0,-71],[0,0,-70],[0,0,-69],[0,0,-68],[0,0,-67],[0,0,-66],[0,0,-65],[0,0,-64],[0,0,-63],[0,0,-62],[0,0,-61],[0,0,-60]]
+			}]},
+			'standup':{'inuse':false,'playframe':0,'motion':[{'kid':4,'dat':[
+			[0,0,-60],[0,0,-61],[0,0,-62],[0,0,-63],[0,0,-64],[0,0,-65],[0,0,-66],[0,0,-67],[0,0,-68],[0,0,-69],[0,0,-70],[0,0,-71],[0,0,-72],[0,0,-73],[0,0,-74],[0,0,-75],[0,0,-76],[0,0,-77],[0,0,-78],[0,0,-79],[0,0,-80],[0,0,-81],[0,0,-82],[0,0,-83],[0,0,-84],[0,0,-85],[0,0,-86],[0,0,-87],[0,0,-88],[0,0,-89],[0,0,-90]]
+			},{'kid':5,'dat':[
+			[0,0,-60],[0,0,-61],[0,0,-62],[0,0,-63],[0,0,-64],[0,0,-65],[0,0,-66],[0,0,-67],[0,0,-68],[0,0,-69],[0,0,-70],[0,0,-71],[0,0,-72],[0,0,-73],[0,0,-74],[0,0,-75],[0,0,-76],[0,0,-77],[0,0,-78],[0,0,-79],[0,0,-80],[0,0,-81],[0,0,-82],[0,0,-83],[0,0,-84],[0,0,-85],[0,0,-86],[0,0,-87],[0,0,-88],[0,0,-89],[0,0,-90]]
+			}]},
+			'attack':{'inuse':false,'playframe':0,'motion':[{'kid':2,'dat':[
+			[0,0,-100],[0,-25,-75],[0,-50,-50],[0,-75,-25],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100]]
+			},{'kid':3,'dat':[
+			[0,0,-100],[0,-25,-75],[0,-50,-50],[0,-75,-25],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100]]
+			}]},
+			'win':{'inuse':false,'playframe':0,'motion':[{'kid':0,'dat':[]}]},
+			'lose':{'inuse':false,'playframe':0,'motion':[{'kid':0,'dat':[]}]},
+		};
+
+		// -----------------------------------------------------
+		var s_effect_data={
+			damage:0,
+			attack:0,
+		};
+		var s_timer=[null,null];
+		
+		var s_mask_image=[
+			['',0], // NONE
+			['url(./libs/res/damage.gif)',10000,3000], // KNOCKOUT
+		];
+		
+		// ゲーム関連
+		var s_game_data={
+			mypoints:0,
+			enemypoints:0,
+			marker_x:0,
+			marker_y:0,
+		};
+		
+		// ロボット関連変数
+		var s_robot={
+			camera:0,
+			forward:0,
+			side:0,
+			flags:0,
+			lastprocess:PROCESS_FLAGS.MOTION,
+			power:GAME_CONST.MAX_POWER,
+			shield:GAME_CONST.MAX_SHIELD,
+			mode:ROBOT_MODE.ACTIVE,
+		};
+
+		// 描画関連変数
+		var s_canvas={
+			instance:$('#game-canvas')[0],
+			context:$('#game-canvas')[0].getContext('2d'),
+		};
+		
+		// V-SidoWeb関連
+		//var s_vsido=new VSidoWeb({'ip':s_edison_ip});	// ■操作するロボットを指定・固定したい場合にipを設定
+		var s_vsido=new VSidoWeb();
+		
+		var s_camera=null,s_r2r=null;
+		var s_vsido_data={
+			walk:s_vsido.walk(),
+			angle:s_vsido.servoAngle(),
+			ik:s_vsido.ik(),
+		};
+		s_vsido_data.angle["cycle"]=10;
+		s_vsido_data.angle['servo'].push({'sid':2,'angle':0});
+		
+		s_vsido_data.ik['ikf']['dist']['pos']=true;
+		
+		// フラグ操作関連
+		function offflag(bit){s_robot.flags&=~bit};
+		function setflag(bit){s_robot.flags|=bit;}
+		function isflagup(bit){return (s_robot.flags&bit);}
+		function resetflag(){s_robot.flags=PROCESS_FLAGS.NONE;}
+		
+		// --------------------------------------------------------
+		// Marker
+		function updatetarget(x,y,direct){
+			if(direct){
+				s_game_data.marker_x=x;
+				s_game_data.marker_y=y;
+			}else{
+				s_game_data.marker_x=0;
+				s_game_data.marker_y=0;			
+			}
+		}
+		
+		// SYYSTEM Message
+		function systemmessage(msg){$('#systemmsg').text(msg);}
+		
+		// モーション関連
+		function playmotion(motion){
+			if('attack'==motion){
+				if(!CUSTOM_MOTION['attack']['inuse']){
+					CUSTOM_MOTION['attack']['playframe']=0;
+					CUSTOM_MOTION['attack']['inuse']=true;
+				}
+			}else if('lowerhands'==motion){
+				if(!CUSTOM_MOTION['lowerhands']['inuse']){
+					CUSTOM_MOTION['lowerhands']['playframe']=0;
+					CUSTOM_MOTION['lowerhands']['inuse']=true;
+				}				
+			}else if('crouch'==motion){
+				if(!CUSTOM_MOTION['crouch']['inuse']){
+					CUSTOM_MOTION['crouch']['playframe']=0;
+					CUSTOM_MOTION['crouch']['inuse']=true;
+				}
+			}else if('standup'==motion){
+				if(!CUSTOM_MOTION['standup']['inuse']){
+					CUSTOM_MOTION['standup']['playframe']=0;
+					CUSTOM_MOTION['standup']['inuse']=true;
+				}
+			}
+			setflag(PROCESS_FLAGS.IK);
+		}
+		
+		// エフェクト関連
+		function showeffect(show){
+			var maskobj=$('#mask');
+			if(show==SHOW_EFFECT.KNOCKOUT){
+				maskobj.css("background-image",s_mask_image[show][0]);
+				maskobj.show().delay(s_mask_image[show][1]).fadeOut(s_mask_image[show][2],respawn);
+			}else if(show==SHOW_EFFECT.DAMAGE){
+				s_effect_data.damage=1;
+			}else if(show==SHOW_EFFECT.ATTACK){
+				s_effect_data.attack=1;
+			}
+		}
+
+		// データループ
+		function dataupdate(){
+			if(++s_robot.power>GAME_CONST.MAX_POWER)s_robot.power=GAME_CONST.MAX_POWER;
+		}
+
+		// 描画ループ
+		function canvasloop(){
+			var context=s_canvas.context;
+			context.clearRect(0,0,s_canvas.instance.width,s_canvas.instance.height);
+			
+			var right=s_canvas.instance.width;
+			var rightalign=UI_CONST.RIGHT_PADDING_ALIGN;
+			var bottom=s_canvas.instance.height;
+			var center_x=right/2;
+			var center_y=s_canvas.instance.height/2;
+				
+			context.globalAlpha=1.0;				
+			if(s_effect_data.attack){	
+				context.beginPath();
+				var radius=20/s_effect_data.attack;
+				var frame_ratio=1-s_effect_data.attack/SHOW_EFFECT_FRAME.ATTACK;
+				var marker_x=s_game_data.marker_x;
+				var marker_y=s_game_data.marker_y;
+				var x_offset=((center_x/2)*frame_ratio);
+				var ratio_x=center_x+x_offset;
+				var ratio_y=center_y+(center_y*frame_ratio);
+				PRINT(ratio_x+" - "+ratio_y+" : "+marker_x+" - "+marker_y);
+				context.arc(ratio_x,ratio_y,radius,2*Math.PI,false);
+				context.arc(center_x-x_offset,ratio_y,radius,2*Math.PI,false);
+				context.fillStyle='yellow';
+				context.lineWidth=10;
+				context.fill();
+				if(s_effect_data.attack++>=SHOW_EFFECT_FRAME.ATTACK)s_effect_data.attack=0;
+			}
+			
+			if(s_effect_data.damage){
+				context.globalAlpha=1-(s_effect_data.damage/SHOW_EFFECT_FRAME.DAMAGE);
+				context.beginPath();
+				context.rect(0,0,right,bottom);
+				context.fillStyle='red';
+				context.fill();
+				if(s_effect_data.damage++>=SHOW_EFFECT_FRAME.DAMAGE)s_effect_data.damage=0;
+			}
+
+			context.globalAlpha=1.0;
+			// SHIELD
+			context.fillStyle="#33CC00";
+			context.fillRect(right-(s_robot.shield+rightalign), UI_CONST.TOP_PADDING_ALIGN, s_robot.shield, UI_CONST.BAR_HEIGHT);
+
+			// POWER
+			var spacer=UI_CONST.TOP_PADDING_ALIGN+UI_CONST.BAR_HEIGHT+UI_CONST.BAR_SPACER;
+			context.fillStyle="#3333FF";
+			context.fillRect(right-(s_robot.power+rightalign), spacer, s_robot.power, UI_CONST.BAR_HEIGHT);
+			
+			// TARGET
+			//s_game_data.marker_x
+			//s_game_data.marker_y
+			//context.fillStyle="#FF0000";
+			//context.font='30pt Calibri';
+			//context.textAlign='left';
+			//context.fillText('TARGET',s_game_data.marker_x,s_game_data.marker_y);
+			
+			// TEXT
+			var text_right_align=right-rightalign*2;
+			context.fillStyle="#FFFFFF";
+			context.font='10pt Calibri';
+			context.textAlign='right';
+			context.fillText('SHIELD',text_right_align,UI_CONST.TOP_PADDING_ALIGN+UI_CONST.TEXT_HEIGHT_OFFSET);
+			context.fillText('POWER',text_right_align,spacer+UI_CONST.TEXT_HEIGHT_OFFSET);
+		}
+
+		// カメラ関連
+		function resetcamera(){s_robot.camera=0;}
+
+		// 縦スクロール阻止
+		$(document).on('touchmove',function(e){e.preventDefault()});
+		// 姿勢変更処理
+		$(window).on('orientationchange',function(e){
+			s_canvas.instance.width=window.innerWidth;
+			s_canvas.instance.height=window.innerHeight;
+			updatetarget(window.innerWidth,window.innerHeight,true);
+			resetcamera();
+			if(window.orientation==0){
+			}else{
+			}
+		});
+		
+		// ロボット移動処理
+		function checkrange(input,min,max){
+			if(input<min){input=min}
+			else if(input>max){input=max}
+			return input;
+		}
+		function updaterobotmotion(forward,side,touch){
+			side=checkrange(side,0,UI_CONST.MOVE_GRID);
+			forward=checkrange(forward,0,UI_CONST.MOVE_GRID);
+			s_robot.forward=Math.floor(100*(1-(forward/UI_CONST.MOVE_GRID_HALF)));
+			if(touch){
+				s_robot.side=Math.floor(-100*(1-(side/UI_CONST.MOVE_GRID_HALF)));
+			}else{
+				s_robot.side=Math.floor(100*((side/UI_CONST.MOVE_GRID_HALF)-1));
+			}
+			setflag(PROCESS_FLAGS.MOTION);
+		}
+		function stoprobotmotion(){
+			s_robot.forward=0;
+			s_robot.side=0;
+			setflag(PROCESS_FLAGS.MOTION);
+		}
+		
+		var s_mousedownflag=false;
+		$('#game-movement').on('mousedown touchstart',function(event,ui){	
+			var eleoff=$(this).offset();
+			var forward=0,side=0,touch=false;
+			if(event.type=='mousedown'){
+				forward=event.offsetY;
+				side=event.offsetX;
+			}else{
+				forward=event.originalEvent.touches[0].pageY-eleoff.top;
+				side=(event.originalEvent.touches[0].pageX-eleoff.left);
+				touch=true;
+			}
+			updaterobotmotion(forward,side,touch);
+			s_mousedownflag=true;
+		});
+		$('#game-movement').on('mousemove touchmove',function(event,ui){
+			var eleoff=$(this).offset();
+			var forward=0,side=0,touch=false;
+			if(event.type=='mousemove'){
+				if(!event.which)return;
+				forward=event.offsetY;
+				side=event.offsetX;
+			}else{
+				forward=event.originalEvent.touches[0].pageY-eleoff.top;
+				side=(event.originalEvent.touches[0].pageX-eleoff.left);
+				touch=true;
+			}
+			updaterobotmotion(forward,side,touch);
+		});
+		$('#game-movement').on('mouseup touchend',function(event,ui){
+			stoprobotmotion();
+			s_mousedownflag=false;
+		});
+		$(document).on('mouseup',function(event,ui){
+			if(s_mousedownflag){
+				stoprobotmotion();
+				s_mousedownflag=false;
+			}
+			if(s_touchgame){
+				s_touchgame=false;
+			}
+		});
+		
+		var s_touchgame=false;
+		$('#game-controls').on('click touchstart',function(event,ui){
+			fire();
+			s_touchgame=true;
+		});
+		$('#game-controls').on('mouseup touchmove touchend',function(event,ui){
+			playmotion('lowerhands');
+		});		
+		// ゲーム関連
+		function ispowerdown(){return (s_robot.mode==ROBOT_MODE.UNACTIVE);}
+		function powerdown(){
+			s_robot.mode=ROBOT_MODE.UNACTIVE;
+			s_robot.lastprocess=PROCESS_FLAGS.CAMERA;
+			stoprobotmotion();
+		}
+		function respawn(){
+			systemmessage(UI_CONST.RESET_MSG);
+			sendmessage(CMD_TYPE.RESPAWN);
+			
+			s_robot.power=GAME_CONST.MAX_POWER;
+			s_robot.shield=GAME_CONST.MAX_SHIELD;
+			s_robot.mode=ROBOT_MODE.ACTIVE;
+			playmotion('lowerhands');
+			playmotion('standup');
+		}
+		function fire(){
+			var power=s_robot.power-GAME_CONST.ATK_POWER;
+			if(power>0){
+				sendmessage(CMD_TYPE.ATTACK);
+				s_robot.power=power;
+				showeffect(SHOW_EFFECT.ATTACK);
+				playmotion('attack');
+			}else{
+				playmotion('lowerhands');
+			}
+		}
+		
+		function sendmessage(type){
+			var msg={'attack':{'cmd':0,'dat':0}};
+			if(type==CMD_TYPE.ATTACK){
+				msg['attack']['cmd']=CMD_TYPE.ATTACK;
+			}
+			else if(type==CMD_TYPE.WIN){
+				msg['attack']['cmd']=CMD_TYPE.WIN;
+			}
+			else if(type==CMD_TYPE.RESPAWN){
+				msg['attack']['cmd']=CMD_TYPE.RESPAWN;
+			}
+			s_r2r.send(msg);
+		}
+		
+		// リモートコール
+		function remotecallback(msg){
+			if(ispowerdown()) return;
+			
+			var marker=msg['marker'];
+			if(marker){
+				var x=marker['x'];
+				var y=marker['y'];
+				updatetarget(x,y);
+			}
+			var r2rmsg=msg['r2r'];
+			if(r2rmsg) {
+				var attack=r2rmsg['attack'];
+				if(attack){
+					var cmdtype=attack['cmd'];
+					var cmddat=attack['dat'];
+					var markerAttack = attack['marker'];
+					
+					if(cmdtype==CMD_TYPE.ATTACK && markerAttack){
+						if(GAME_CONST.MIN_ATTACKABLE_DISTANCE<=markerAttack['distance']){
+							translateattack();
+						}
+					}else if(cmdtype==CMD_TYPE.WIN){
+						systemmessage(UI_CONST.WIN_MSG);
+					}else if(cmdtype==CMD_TYPE.RESPAWN){
+						systemmessage(UI_CONST.RESET_MSG);
+					}
+				}
+			}
+		}
+		function translateattack(){
+			var damage=Math.floor(GAME_CONST.ATK_POWER*(1-s_robot.power/GAME_CONST.MAX_POWER))+GAME_CONST.MIN_ATTACK_DAMAGE;
+			s_robot.shield-=damage;
+			if(s_robot.shield<0){
+				powerdown();
+				playmotion('crouch');
+				sendmessage(CMD_TYPE.WIN);
+				s_robot.shield=0;
+				showeffect(SHOW_EFFECT.KNOCKOUT);
+				systemmessage(UI_CONST.LOSE_MSG);
+			}else{
+				showeffect(SHOW_EFFECT.DAMAGE);
+			}
+		}
+
+		
+		// 姿勢制御関連
+		function bindorientation(){$(window).bind('deviceorientation',oricontrol);}
+		function unbindorientation(){$(window).unbind('deviceorientation');}
+		function oricontrol(e){
+			if(ispowerdown()) return;
+			
+			var px=e.originalEvent.alpha|0;
+			
+			if(px>GAME_CONST.MAX_DEVICE_ROT&&px<=180){
+				px=GAME_CONST.MAX_DEVICE_ROT;
+			}else if(px>180&&px<GAME_CONST.MINUS_CAMERA_ORI){
+				px=GAME_CONST.MINUS_CAMERA_ORI;
+			}
+			px=(Math.sin(px*Math.PI/180)/(GAME_CONST.CAMERA_ROT_DELIMITER));
+			s_robot.camera=-Math.floor(GAME_CONST.MAX_CAMERA_ROT*px);
+			setflag(PROCESS_FLAGS.CAMERA);
+		}
+		
+		// 制御ループ
+		function controlloop(){
+			dataupdate();
+			if(!s_robot.flags) return;
+			
+			var cmd=null;
+			var lastprocess=s_robot.lastprocess;
+			var currprocess=PROCESS_FLAGS.NONE;
+			var processed=false;
+			if(lastprocess==PROCESS_FLAGS.CAMERA){
+				if(isflagup(PROCESS_FLAGS.MOTION)){
+					currprocess=PROCESS_FLAGS.MOTION;
+				}else if(isflagup(PROCESS_FLAGS.IK)){
+					currprocess=PROCESS_FLAGS.IK;
+				}else if(isflagup(PROCESS_FLAGS.CAMERA)){
+					currprocess=PROCESS_FLAGS.CAMERA;
+				}
+			}else if(lastprocess==PROCESS_FLAGS.MOTION){
+				if(isflagup(PROCESS_FLAGS.IK)){
+					currprocess=PROCESS_FLAGS.IK;
+				}else if(isflagup(PROCESS_FLAGS.CAMERA)){
+					currprocess=PROCESS_FLAGS.CAMERA;
+				}else if(isflagup(PROCESS_FLAGS.MOTION)){
+					currprocess=PROCESS_FLAGS.MOTION;
+				}
+			}else if(lastprocess==PROCESS_FLAGS.IK){
+				if(isflagup(PROCESS_FLAGS.CAMERA)){
+					currprocess=PROCESS_FLAGS.CAMERA;
+				}else if(isflagup(PROCESS_FLAGS.MOTION)){
+					currprocess=PROCESS_FLAGS.MOTION;
+				}else if(isflagup(PROCESS_FLAGS.IK)){
+					currprocess=PROCESS_FLAGS.IK;
+				}
+			}
+			
+			if(currprocess==PROCESS_FLAGS.CAMERA){
+				s_robot.lastprocess=PROCESS_FLAGS.CAMERA;
+				offflag(PROCESS_FLAGS.CAMERA);
+				
+				s_vsido_data.angle['servo'][0]['angle']=s_robot.camera;
+				cmd=s_vsido_data.angle;
+				
+			}else if(currprocess==PROCESS_FLAGS.MOTION){
+				s_robot.lastprocess=PROCESS_FLAGS.MOTION
+				offflag(PROCESS_FLAGS.MOTION);
+				
+				s_vsido_data.walk['forward']=s_robot.forward;
+				s_vsido_data.walk['turn']=s_robot.side;
+				cmd=s_vsido_data.walk;
+				
+			}else if(currprocess==PROCESS_FLAGS.IK){
+				s_robot.lastprocess=PROCESS_FLAGS.IK;
+				
+				var ikavaiable=0;
+				s_vsido_data.ik['kdts']=[];
+				for(var key in CUSTOM_MOTION){
+					var obj=CUSTOM_MOTION[key];
+					if(!obj['inuse']) continue;
+					
+					var currframe=obj['playframe'];
+					var motion=obj['motion'];
+					var active=0;
+					for(var i=0;i<motion.length;i++){
+						var kid=motion[i]['kid'];
+						var dat=motion[i]['dat'];
+						if(currframe<dat.length){
+							var kdt=s_vsido.kdt();
+							kdt['kid']=kid;
+							kdt['kdt']['pos']['x']=dat[currframe][0];
+							kdt['kdt']['pos']['y']=dat[currframe][1];
+							kdt['kdt']['pos']['z']=dat[currframe][2];
+							s_vsido_data.ik['kdts'].push(kdt);
+							active++;
+						}
+					}
+					
+					// アニメーションIKがない場合、再生終わり
+					if(!active){
+						obj['inuse']=false;
+					}else{
+						obj['playframe']+=1;
+						ikavaiable++;
+					}
+				}
+				
+				if(ikavaiable){
+					cmd=s_vsido_data.ik;
+				}else{
+					offflag(PROCESS_FLAGS.IK);
+				}
+			}else{
+				// 最後の処理したプロセスをカメラに設定
+				s_robot.lastprocess=PROCESS_FLAGS.CAMERA;
+				resetflag();
+			}
+			
+			if(cmd) s_vsido.send(cmd);
+		}
+		// デバイスの姿勢制御のバインドを有効・無効化
+		var enable_bind_orientation=true;
+		function delayexec(){
+			if(enable_bind_orientation)bindorientation();
+			s_timer[TIMER_TYPE.RENDERER]=setInterval(canvasloop,APP_TIMER.RENDER_LOOP);
+			s_timer[TIMER_TYPE.CONTROL]=setInterval(controlloop,APP_TIMER.CONTROL_LOOP);
+		}
+		function init(){
+			if(window.orientation==0){
+				s_canvas.instance.width=window.innerWidth;
+				s_canvas.instance.height=window.innerHeight;
+			}
+			resetcamera();
+			delayexec();
+			
+			//s_camera=new VSidoCamera({'ip':s_edison_ip});	// ■カメラ画像をどのipから取得するか	
+			s_camera=new VSidoCamera();
+			s_camera.listen(remotecallback);
+			s_camera.viewMarkerDetect($('#camera-image'));
+			
+			//s_r2r=new VSidoR2R({'i':s_edison_ip,'you':s_edison_ip_enemy},remotecallback);	//■対戦する自分・相手のipの指定
+			s_r2r=new VSidoR2R({'you':s_edison_ip_enemy},remotecallback);	// 対戦相手のip
+		}
+		// 初期化処理
+		//load
+		//beforeunload 
+		$(window)
+		.on('pageshow',function(){
+			s_canvas.instance.width=window.innerWidth;
+			s_canvas.instance.height=window.innerHeight;
+			updatetarget(window.innerWidth/2,window.innerHeight/2,true);
+			init();
+		})
+		.on('pagehide',function(){
+			if(enable_bind_orientation)unbindorientation();
+			clearInterval(s_timer[TIMER_TYPE.CONTROL]);
+			clearInterval(s_timer[TIMER_TYPE.RENDERER]);
+		})
+		.on('resize',function(){
+			if(enable_bind_orientation){
+				unbindorientation();
+				bindorientation();
+			}
+		})
+		;
+	
+		// -------------デバッグ関連-----------------
+		function reloadpage(){location.reload(true);}
+		$('#debug-reload').on('click',reloadpage);
+		function PRINT(txt){$('#debug-print').text(txt);}
+	});
+	</script>
+
+	<style>
+	/*
+		デバッグ関連
+	*/
+	
+	#debug-reload,#debug-print{
+		position:absolute;
+		top:0;
+		border:1px solid blue;
+		padding:5px 10px 5px 10px;
+		width:10em;
+		z-index:7;
+		display:none;
+	}
+	
+	#debug-reload{left:0px;}
+	#debug-print{top:40px;left:0px;}
+	</style>
+</head>
+
+<body>
+	<!-- <div id="debug-reload">ReloadPage</div> -->
+	<div id="debug-print"></div>
+	<div id="systemmsg"></div>
+	<div id="mask"></div>
+	<canvas id="game-canvas" width="320px" height="240px"></canvas>
+	<img id="camera-image" src="#" />
+	<div id="game-movement"></div><div id="game-controls"></div>
+</body>
+</html>

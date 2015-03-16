@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="Shift-JIS">
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />  
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	
+	<link rel="stylesheet" href="./ip2/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
+	<script src="./ip2/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="./ip2/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+	<script src="./ip2/libs/jquery/jquery.ui.touch-punch.min.js"></script>
+	
+	<link rel="stylesheet" href="./ip2/libs/common.css" />
+	<script src="./ip2/libs/common.js"></script>
+	
+	<title>V-SidoWeb Home</title>
+
+	<script>
+	$(function(){
+		$('.alink').on("click",function(){
+			var url=$(this).data('url');
+			var valid=validateIPtype();
+			if(valid==IP_TYPE.VALID){
+				url+="?enemyip="+getIP();
+			}
+			document.location.href=url;
+		});
+	});
+	</script>
+	
+	<style>
+	#index-table{
+		display:table;
+		margin:5px auto 5px auto;
+	}
+	.white-style{
+		color:#B6B7B1;
+		background:#000;
+		text-align:center;
+		margin:5px auto 5px auto;
+		font-weight:bold;
+		display:table-row;
+		height:30px;
+	}
+	.alink{
+		margin:0.2em auto;
+		padding:0.8em;
+		font-weight:bold;
+	}
+	.alink:hover{
+		cursor:pointer;
+		color:#FFF;
+	}
+	</style>
+</head>
+<body>
+	<div id="index-table">
+	<h2>V-SidoWeb Controller</h2><br>
+	<div class="white-style alink" data-url="./ip2/index.html">Robot Control</div>
+	<br>
+	<h2>V-SidoWeb Game</h2><br>
+	<div id="nav-ip">
+		<h3>Enemy IP</h3>
+		<input type="text" id="ip-1" value="">
+		<input type="text" id="ip-2" value="">
+		<input type="text" id="ip-3" value="">
+		<input type="text" id="ip-4" value="">
+		<div id="ipset">Set</div>
+	</div>
+	<br>
+	<div class="white-style alink" data-url="./game/player.html">Player</div>
+	<div class="white-style alink" data-url="./game/tv.html">TV</div>
+	</div>
+</body>
+</html>
