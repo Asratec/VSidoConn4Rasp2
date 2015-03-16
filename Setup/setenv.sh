@@ -1,10 +1,11 @@
 #!/bin/bash
 
-opkg update 
-opkg install v4l-utils v4l-utils-dev libv4l-dev libv4l 
-opkg install git
-opkg install cmake
-opkg install opencv-dev
+apt-get update 
+apt-get install git cmake --fix-missing
+apt-get install gcc-4.8 g++-4.8 --fix-missing
+apt-get install libv4l-dev libopencv-dev --fix-missing
+cd /usr/bin && ln -sf gcc-4.8 gcc
+cd /usr/bin && ln -sf g++-4.8 g++
 sync
 sync
 
