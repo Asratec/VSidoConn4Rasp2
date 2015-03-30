@@ -60,6 +60,7 @@ pre-build:
 	cd $(OBJROOT) && cmake -DCMAKE_INSTALL_PREFIX=$(INSTALLROOT) $(SRCROOT)
 
 pre-package:
+	mkdir -p $(PACKROOT)
 	mkdir -p $(OBJROOT)
 	cd $(OBJROOT) && cmake -DCMAKE_INSTALL_PREFIX=$(PACKROOT)/usr $(SRCROOT)
 	

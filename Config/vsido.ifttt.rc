@@ -1,6 +1,6 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          vsido.streamingraw
+# Provides:          vsido.collect.log
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
@@ -19,12 +19,12 @@
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Description of the mjpeg stream of raw service"
-NAME=MJPEStream.raw.sh
+DESC="Description of the vsido web camera service"
+NAME=collectlog.sh
 DAEMON=/opt/vsido/usr/bin/$NAME
 DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
-SCRIPTNAME=/etc/init.d/vsido.streamingraw.rc
+SCRIPTNAME=/etc/init.d/vsido.collect.log.rc
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0

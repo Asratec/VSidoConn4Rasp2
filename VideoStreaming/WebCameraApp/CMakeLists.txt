@@ -8,6 +8,7 @@ add_executable (VSido.cam
 	./markerdetect.cpp
 	./wscomm.cpp
 	./tcpcomm.cpp
+	./frameloop.cpp
 	./main.cpp
 )
 

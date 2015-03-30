@@ -65,94 +65,53 @@ http://seesaawiki.jp/w/renkin3q/d/Linux/v4l2-ctl
 
 
 
+list<shared_ptr<cv::Mat>> lVideoFrames;
+mutex mtxVideoFrames;
+mutex mtxDataVideoFrames;
 
-static void initEnv(void)
+condition_variable condVideoFrames;
+
+
+
+
+
+extern double pyramidScale;
+extern double frameScale;
+
+
+void frameLoopMain(void)
 {
-    
-    {
-        string shell("umount /mnt/vsido/video");
-        int ret = ::system(shell.c_str());
-    }
-    {
-        string shell("mkdir -p /mnt/vsido/video");
-        int ret = ::system(shell.c_str());
-    }
-    {
-        string shell("mount -t tmpfs -o size=32M tmpfs /mnt/vsido/video");
-        int ret = ::system(shell.c_str());
-    }
-    {
-        string shell("mkdir -p /mnt/vsido/video/raw");
-        int ret = ::system(shell.c_str());
-    }
-    {
-        string shell("mkdir -p /mnt/vsido/video/face.detect");
-        int ret = ::system(shell.c_str());
-    }
-    {
-        string shell("mkdir -p /mnt/vsido/video/marker.detect");
-        int ret = ::system(shell.c_str());
-    }
-    {
-        string shell("mkdir -p /mnt/vsido/video/marker.info");
-        int ret = ::system(shell.c_str());
-    }
-    {
-        string shell("mkdir -p /mnt/vsido/video/sub");
-        int ret = ::system(shell.c_str());
+
+	for(int iCounter = 0;;iCounter++)
+	{
+		auto cameraFrame = readFrameMain(frameScale,iCounter);
+		if(nullptr == cameraFrame)
+		{
+    		continue;
+		}
+		DUMP_VAR_RAW(iCounter);
+#ifdef _DO_FACE_DETECT_
+		/// give detect thread.
+		{
+			lock_guard<mutex> lk(mtxDataVideoFrames);
+			lVideoFrames.push_back(cameraFrame);
+		}
+		condVideoFrames.notify_one();
+#endif
     }
 }
 
-
-
-
-
-
-
-double pyramidScale = 1.1;
-
-double frameScale = 0.5;
-
-
-int main(int argc, char* argv[])
+void frameLoopSub(void)
 {
-	cout << "usage:" << endl;
-	cout << "\t" << argv[0] << " <pyramid scale> " << " <factor> " <<  endl;
-	
-	if(2 == argc)
-	{
-		pyramidScale = ::atof(argv[1]);
-	}
-	else if(2 < argc)
-	{
-		pyramidScale = ::atof(argv[1]);
-		frameScale = ::atof(argv[2]);
-	}
-	DUMP_VAR(pyramidScale);
-	DUMP_VAR(frameScale);
-	
-    initEnv();
-	
-	thread tCaptureMain(doCaptureMain);
-	thread tCaptureSub(doCaptureSub);
-//	thread tDetectFace(doDetectFace);
-	thread tDetectMarker(doDetectMarker);
-	thread tWS(doWebSocket);
-	thread tTCP(doTCPSocket);
-	
-	thread tMainFrame(frameLoopMain);
-	thread tSubFrame(frameLoopSub);
 
-	tCaptureMain.join();
-	tCaptureSub.join();
-//	tDetectFace.join();
-	tDetectMarker.join();
-	tWS.join();
-	tTCP.join();
-
-	tMainFrame.join();
-	tSubFrame.join();
-    
-	return 0;
+	for(int iCounter = 0;;iCounter++)
+	{
+		auto cameraFrame = readFrameSub(frameScale,iCounter);
+		if(nullptr == cameraFrame)
+		{
+    		continue;
+		}
+		DUMP_VAR_RAW(iCounter);
+    }
 }
 

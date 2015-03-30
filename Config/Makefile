@@ -1,17 +1,18 @@
 VSID_RC := vsido.connect.rc
 VSID_RC += vsido.webcam.rc
-#VSID_RC += vsido.streamingface.rc
 VSID_RC += vsido.streamingraw.rc
 VSID_RC += vsido.streamingmarker.rc
+VSID_RC += vsido.streamingsub.rc
+#VSID_RC += vsido.ifttt.rc
 
 VSID_NGINX := nginx.vsido.web.game
 VSID_NGINX += nginx.vsido.web.root
 VSID_NGINX += nginx.vsido.web.server
 
 
-.PHONY:service $(VSID_RC) $(VSID_NGINX)
+.PHONY:service $(VSID_RC) $(VSID_NGINX) cmdline.cp
 
-service:copy.rc copy.nginx $(VSID_RC) $(VSID_NGINX)
+service:copy.rc copy.nginx cmdline.cp $(VSID_RC) $(VSID_NGINX)
 	sync
 copy.rc:
 	cp -f ./vsido.*.rc /etc/init.d/
@@ -23,6 +24,9 @@ $(VSID_RC):
 
 copy.nginx:
 	cp -f ./nginx.* /etc/nginx/sites-available/
+	
+cmdline.cp:
+	cp -f ./cmdline.txt /boot/cmdline.txt
 		
 $(VSID_NGINX):
 	echo "set to auto boot $@"

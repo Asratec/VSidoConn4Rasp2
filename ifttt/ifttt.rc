@@ -1,0 +1,3 @@
+#!/bin/sh
+/opt/vsido/usr/bin/collectlog.sh &
+

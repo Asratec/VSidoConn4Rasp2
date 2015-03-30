@@ -8,7 +8,7 @@ Raspbery pi 2 Boardの準備.
 
 
 	
-ビルド済みバイナリをインストールする。  
+ビルド済みバイナリをインストールする。
   https://v-sido-developer.com/learning/connect/v-sido-connect-raspberrypi/  
 
 	

@@ -49,6 +49,21 @@ var VSidoCamera = function(config){
 		marker.attr('src', 'http://'+ this.ip +':18083/marker?i=' + Math.random());
 	}
 
+	/**
+	* Sub画像を表示する。
+	* @method viewSub
+	* @param {img} 		sub 	image要素
+    * @example
+    * <pre><code>
+	* var camera = new VSidoCamera({'ip':'192.168.11.2'});
+    * camera.viewSub($('#camera_sub'));	
+	* </code></pre>
+	**/
+	this.viewSub = function(marker,ip) {
+		var random = Math.floor(Math.random() * Math.pow(2, 31));
+		marker.attr('src', 'http://'+ this.ip +':18086/sub?i=' + Math.random());
+	}
+
 	this.ws = null;
 	this.cb = null;
 	this.ready = false;

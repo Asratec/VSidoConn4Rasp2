@@ -29,22 +29,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef __CAPTURE_HPP__
-#define __CAPTURE_HPP__
-#include <opencv2/opencv.hpp>
-#include <memory>
-using namespace std;
-
-const static int iConstFileName = 3;
-const static vector<int> vConstCompressionParams = {CV_IMWRITE_JPEG_QUALITY,75};
-
-int doCaptureMain(void);
-shared_ptr<cv::Mat> readFrameMain(double factor,int iCounter);
-
-
-int doCaptureSub(void);
-shared_ptr<cv::Mat> readFrameSub(double factor,int iCounter);
-
-
-#endif // __CAPTURE_HPP__
+#ifndef __FRAMELOOP_HPP__
+#define __FRAMELOOP_HPP__
+void frameLoopMain(void);
+void frameLoopSub(void);
+#endif // __FRAMELOOP_HPP__
 
