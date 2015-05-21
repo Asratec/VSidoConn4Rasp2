@@ -1,0 +1,34 @@
+#!/bin/sh 
+rfkill unblock bluetooth
+sleep 1
+hciconfig hci0 down
+sleep 1
+hciconfig hci0 up
+sleep 1
+
+
+#hcitool scan
+
+COMM_VSIDO=rfcomm75
+if [ -f /dev/${COMM_VSIDO} ]; then
+	rfcomm release ${COMM_VSIDO}
+fi
+#rfcomm bind ${COMM_VSIDO} 00:09:DD:40:E5:28
+#rfcomm bind ${COMM_VSIDO}  00:1B:DC:09:53:C3
+#rfcomm bind ${COMM_VSIDO}  00:1B:DC:09:53:C3
+
+#rfcomm bind rfcomm75  00:1B:DC:09:53:C3
+
+
+echo "${1}"
+mkdir -p /opt/vsido/usr/etc/
+touch /opt/vsido/usr/etc/bt.bind
+if [ "" = "${1}" ] ; then
+	address=`cat /opt/vsido/usr/etc/bt.bind`
+	rfcomm bind ${COMM_VSIDO}  ${address}
+else 
+	rfcomm bind ${COMM_VSIDO}  ${1}
+	echo "${1}" >/opt/vsido/usr/etc/bt.bind
+fi
+
+sync
