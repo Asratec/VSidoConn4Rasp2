@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf8">
+    <title>VSido Web App Sample</title>
+    <!-- Viewport mobile tag for sensible mobile support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<!--meta name="viewport" content="user-scalable=no"-->
+
+    <!--STYLES-->
+    <link rel="stylesheet" href="/styles/importer.css">
+    <link rel="stylesheet" href="/styles/jquery.mobile-1.4.5.min.css">
+    <link rel="stylesheet" href="/styles/vsido.connection.css">
+    <link rel="stylesheet" href="/styles/vsido.hand.css">
+    <link rel="stylesheet" href="/styles/vsido.layout.css">
+    <link rel="stylesheet" href="/styles/vsido.walk.css">
+    <!--STYLES END-->
+    
+	<!--SCRIPTS-->
+<script src="/js/jquery-2.1.1.min.js"></script>
+<script src="/js/jquery.mobile-1.4.5.min.js"></script>
+<script src="/js/vsido.camera.js"></script>
+<script src="/js/vsido.canvas.acceleration.js"></script>
+<script src="/js/vsido.canvas.hand.js"></script>
+<script src="/js/vsido.canvas.joystick.js"></script>
+<script src="/js/vsido.canvas.js"></script>
+<script src="/js/vsido.canvas.sensorstick.js"></script>
+<script src="/js/vsido.web.js"></script>
+<!--SCRIPTS END-->
+	
+	
+  </head>
+
+  <body>
+    <a href="/" target="_self">トップに戻る</a>
+
+    <script type="text/javascript">
+	$(function(){
+		var camera = new VSidoCamera();
+		camera.listen(function(msg){
+			console.log(msg);
+			$('#vsido_camera_info').text(JSON.stringify(msg));
+		});
+		$('#vsido_debug_send').click(function(){
+			var adjustColor = {};
+			var hueLT = $('#col_hue_lower').val();
+			adjustColor['HueL'] = parseInt(hueLT,16);
+			var hueUT = $('#col_hue_upper').val();
+			adjustColor['HueU'] = parseInt(hueUT,16);
+			
+			var satLT = $('#col_sat_lower').val();
+			adjustColor['SatL'] = parseInt(satLT,16);
+			var satUT = $('#col_sat_upper').val();
+			adjustColor['SatU'] = parseInt(satUT,16);
+
+			var valLT = $('#col_val_lower').val();
+			adjustColor['ValL'] = parseInt(valLT,16);
+			var valUT = $('#col_val_upper').val();
+			adjustColor['ValU'] = parseInt(valUT,16);
+
+			camera.setMarker(adjustColor);
+			
+		});
+
+		$('#vsido_red_send').click(function(){
+			var adjustColor = {};
+			adjustColor['HueL'] = parseInt('0x9F',16);
+			adjustColor['HueU'] = parseInt('0x0',16);
+			
+			adjustColor['SatL'] = parseInt('0x45',16);
+			adjustColor['SatU'] = parseInt('0xFF',16);
+
+			adjustColor['ValL'] = parseInt('0xAE',16);
+			adjustColor['ValU'] = parseInt('0xFF',16);
+
+			camera.setMarker(adjustColor);
+			
+		});
+
+		$('#vsido_green_send').click(function(){
+			var adjustColor = {};
+			adjustColor['HueL'] = parseInt('0x25',16);
+			adjustColor['HueU'] = parseInt('0x3D',16);
+			
+			adjustColor['SatL'] = parseInt('0x50',16);
+			adjustColor['SatU'] = parseInt('0xFF',16);
+
+			adjustColor['ValL'] = parseInt('0x93',16);
+			adjustColor['ValU'] = parseInt('0xFF',16);
+
+			camera.setMarker(adjustColor);
+			
+		});
+		
+	});
+</script>
+<br/>
+<a href="/camera" target="_self">映像</a>
+<a href="/camera/debug" target="_self">デバッグ</a>
+<a href="/camera/attack" target="_self">攻撃サンプル</a>
+<br/>
+
+<label>col_hue_lower</label>
+<input type="text" id="col_hue_lower" value="0x25"/>
+<label>col_hue_upper</label>
+<input type="text" id="col_hue_upper" value="0x3D"/>
+
+<label>col_sat_lower</label>
+<input type="text" id="col_sat_lower" value="0x50"/>
+<label>col_sat_upper</label>
+<input type="text" id="col_sat_upper" value="0xFF"/>
+
+<label>col_val_lower</label>
+<input type="text" id="col_val_lower" value="0x93"/>
+<label>col_val_upper</label>
+<input type="text" id="col_val_upper" value="0xFF"/>
+
+<input type="submit" id="vsido_debug_send" value="送信">
+<br/>
+<input type="submit" id="vsido_red_send" value="赤検出">
+<input type="submit" id="vsido_green_send" value="緑検出">
+
+<div id="vsido_camera_info" ></div>
+<br/>
+
+
+   <div id="vsido_div_top">
+     <label>要求<label/>
+     <div id="vsido_output_request"></div>
+     <label>返事<label/>
+     <div id="vsido_output_response"></div>
+   </div>
+	
+  </body>
+</html>

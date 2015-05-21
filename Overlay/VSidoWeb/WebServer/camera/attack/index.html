@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf8">
+    <title>VSido Web App Sample</title>
+    <!-- Viewport mobile tag for sensible mobile support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<!--meta name="viewport" content="user-scalable=no"-->
+
+    <!--STYLES-->
+    <link rel="stylesheet" href="/styles/importer.css">
+    <link rel="stylesheet" href="/styles/jquery.mobile-1.4.5.min.css">
+    <link rel="stylesheet" href="/styles/vsido.connection.css">
+    <link rel="stylesheet" href="/styles/vsido.hand.css">
+    <link rel="stylesheet" href="/styles/vsido.layout.css">
+    <link rel="stylesheet" href="/styles/vsido.walk.css">
+    <!--STYLES END-->
+    
+	<!--SCRIPTS-->
+<script src="/js/jquery-2.1.1.min.js"></script>
+<script src="/js/jquery.mobile-1.4.5.min.js"></script>
+<script src="/js/vsido.camera.js"></script>
+<script src="/js/vsido.canvas.acceleration.js"></script>
+<script src="/js/vsido.canvas.hand.js"></script>
+<script src="/js/vsido.canvas.joystick.js"></script>
+<script src="/js/vsido.canvas.js"></script>
+<script src="/js/vsido.canvas.sensorstick.js"></script>
+<script src="/js/vsido.r2r.js"></script>
+<!--SCRIPTS END-->
+	
+	
+  </head>
+
+  <body>
+    <a href="/" target="_self">トップに戻る</a>
+
+    <script type="text/javascript">
+	function callback(msg) {
+		if(msg &&msg['r2r'] && msg['r2r']['attack'] ) {
+			$('#vsido_camera_info').text(JSON.stringify(msg));
+		}
+	}
+	$(function(){
+		var r2r = new VSidoR2R({'you':'192.168.11.10'},callback);
+		
+		$('#vsido_debug_attack').click(function(){
+			var msg = {'attack':{}};
+			r2r.send(msg);
+		});
+		$('#vsido_debug_free').click(function(){
+			var msg2 = {'type':'free','msg':'hello'};
+			r2r.send(msg2);
+		});
+	});
+</script>
+<br/>
+<a href="/camera" target="_self">映像</a>
+<a href="/camera/debug" target="_self">デバッグ</a>
+<a href="/camera/attack" target="_self">攻撃サンプル</a>
+<br/>
+
+
+<input type="submit" id="vsido_debug_attack" value="攻撃">
+
+<input type="submit" id="vsido_debug_free" value="自由メッセージ送信">
+
+<div id="vsido_camera_info" ></div>
+<br/>
+
+
+   <div id="vsido_div_top">
+     <label>要求<label/>
+     <div id="vsido_output_request"></div>
+     <label>返事<label/>
+     <div id="vsido_output_response"></div>
+   </div>
+	
+  </body>
+</html>

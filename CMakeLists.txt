@@ -41,6 +41,7 @@ add_subdirectory(RobotGame)
 add_subdirectory(WebRoot)
 add_subdirectory(ifttt)
 add_subdirectory(Overlay/VSidoService)
+add_subdirectory(Overlay/VSidoWeb)
 
 
 install(DIRECTORY Config DESTINATION share )

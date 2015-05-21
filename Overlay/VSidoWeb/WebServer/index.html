@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf8">
+    <title>VSido Web App Sample</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/styles/importer.css">
+    <link rel="stylesheet" href="/styles/jquery.mobile-1.4.5.min.css">
+<script src="/js/jquery-2.1.1.min.js"></script>
+<script src="/js/jquery.mobile-1.4.5.min.js"></script>
+  </head>
+
+  <body>
+    <a href="/" target="_self">トップに戻る</a>
+
+    <div>
+
+<table border="1" width="500" cellspacing="0" cellpadding="5" bordercolor="#333333">
+<tr>
+<th bgcolor="#EE0000"><font color="#FFFFFF">機能</font></th>
+<th bgcolor="#EE0000" width="350"><font color="#FFFFFF">詳細</font></th>
+</tr>
+
+
+
+<tr>
+<td bgcolor="#99CC00" align="right" nowrap><a href="/connection" target="_self">ロボット探す</a></td>
+<td bgcolor="#FFFFFF" valign="top" width="150"></td>
+</tr>
+
+
+<tr>
+<td bgcolor="#99CC00" align="right" nowrap><a href="/angle" target="_self">目標角度設定</a></td>
+<td bgcolor="#FFFFFF" valign="top" width="150"></td>
+</tr>
+
+<tr>
+<td bgcolor="#99CC00" align="right" nowrap><a href="/ik" target="_self">IK設定</a></td>
+<td bgcolor="#FFFFFF" valign="top" width="150"></td>
+</tr>
+
+<tr>
+<td bgcolor="#99CC00" align="right" nowrap><a href="/walk" target="_self">移動情報設定</a></td>
+<td bgcolor="#FFFFFF" valign="top" width="150"></td>
+</tr>
+
+
+<tr>
+<td bgcolor="#99CC00" align="right" nowrap><a href="/console" target="_self">コマンドそのまま入力</a></td>
+<td bgcolor="#FFFFFF" valign="top" width="150"></td>
+</tr>
+
+
+<tr>
+<td bgcolor="#99CC00" align="right" nowrap><a href="/camera" target="_self">カメラ映像</a></td>
+<td bgcolor="#FFFFFF" valign="top" width="150"></td>
+</tr>
+
+
+</table>
+
+</div>
+
+
+   <div id="vsido_div_top">
+     <label>要求<label/>
+     <div id="vsido_output_request"></div>
+     <label>返事<label/>
+     <div id="vsido_output_response"></div>
+   </div>
+	
+  </body>
+</html>

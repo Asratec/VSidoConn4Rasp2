@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf8">
+    <title>VSido Web App Sample</title>
+    <!-- Viewport mobile tag for sensible mobile support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<!--meta name="viewport" content="user-scalable=no"-->
+
+    <!--STYLES-->
+    <link rel="stylesheet" href="/styles/importer.css">
+    <link rel="stylesheet" href="/styles/jquery.mobile-1.4.5.min.css">
+    <link rel="stylesheet" href="/styles/vsido.connection.css">
+    <!--STYLES END-->
+    
+	<!--SCRIPTS-->
+<script src="/js/jquery-2.1.1.min.js"></script>
+<script src="/js/jquery.mobile-1.4.5.min.js"></script>
+<script src="/js/vsido.web.js"></script>
+<!--SCRIPTS END-->
+	
+	
+  </head>
+
+  <body>
+    <a href="/" target="_self">トップに戻る</a>
+
+    <script type="text/javascript">
+
+var vsido = new VSidoWeb();
+
+function ConnectRobot(e) {
+//	console.log(e);
+//	console.log(e.name);
+	if(e.name) {
+		var device = {'mac':e.name};
+		vsido.bindBT(device);
+	}
+}
+
+$(function(){
+	function fillTable(jsnDevice) {
+		$('#vsido_connection_tbody').empty();
+		$('#vsido_connection_tbody').append('<tr><th>名称</th><th>MACアドレス</th><th></th></tr>');
+		console.log($('#vsido_connection_tbody').html());
+		if(jsnDevice['devices']){
+			jsnDevice['devices'].forEach( function( device) {
+				console.log(device);
+				$('#vsido_connection_tbody').append('<tr>');
+				$('#vsido_connection_tbody').append('<td>' + device['name'] + '</td>');
+				$('#vsido_connection_tbody').append('<td>' + device['mac'] + '</td>');
+				$('#vsido_connection_tbody').append('<td><input type="button" value="接続"' +
+						'onclick="ConnectRobot(this)"' + 
+						'name="' + device['mac']+'"></td>');
+				$('#vsido_connection_tbody').append('/<tr>');
+			});
+		}
+	}
+	
+	var emptyDevice = {'devices':[]};
+	fillTable(emptyDevice);
+	
+	$('#vsido_bt_scan').click(function(){
+		vsido.scanBT(function(json_data) {
+			console.log(json_data);
+			if(json_data['type'] && json_data['type'] == 'scanBT') {
+				fillTable(json_data);
+			}
+		});
+	});
+	
+
+});
+</script>
+
+<br/>
+<input type="submit" value="探す" id="vsido_bt_scan"　/>
+
+<div>
+   <div id="vsido_connection_search">身近なロボット</div>
+   <div id="vsido_connection_list">
+		<table id="vsido_connection_table" border="1">
+			<col width="200px" />
+			<col width="200px" />
+			<col width="100px" />
+			<tbody id="vsido_connection_tbody">
+			</tbody>
+		</table>
+   </div>
+</div>
+
+<div>
+<font size="5" color="#ff0000">「接続」ボタンを押した後、30秒を待ってからIntel　Edison電源を入れなおしてください。</font>
+</div>
+   <div id="vsido_div_top">
+     <label>要求<label/>
+     <div id="vsido_output_request"></div>
+     <label>返事<label/>
+     <div id="vsido_output_response"></div>
+   </div>
+	
+  </body>
+</html>
