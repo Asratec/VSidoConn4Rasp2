@@ -4,12 +4,14 @@ apt-get update
 apt-get install -y gcc-4.8 g++-4.8 --fix-missing
 apt-get install -y nginx git cmake --fix-missing
 apt-get install -y libv4l-dev libopencv-dev --fix-missing
+apt-get install -y bluez bluez-utils bluez-hcidump --fix-missing
+
 cd /usr/bin && ln -sf gcc-4.8 gcc
 cd /usr/bin && ln -sf g++-4.8 g++
 sync
 sync
 
-wget --no-check-certificate https://asratec.github.io/VSidoConn4Rasp2/Binary/v0.81/VSidoConn4Rasp2.tar.gz -O VSidoConn4Rasp2.tar.gz 
+wget --no-check-certificate https://asratec.github.io/VSidoConn4Rasp2/Binary/v0.82/VSidoConn4Rasp2.tar.gz -O VSidoConn4Rasp2.tar.gz 
 sudo mkdir -p /opt/vsido/
 sudo tar -xzvf VSidoConn4Rasp2.tar.gz -C /opt/vsido/
 sudo make -C /opt/vsido/usr/share/Config
