@@ -10,9 +10,9 @@ VSID_NGINX += nginx.vsido.web.root
 VSID_NGINX += nginx.vsido.web.server
 
 
-.PHONY:service $(VSID_RC) $(VSID_NGINX) cmdline.cp
+.PHONY:service $(VSID_RC) $(VSID_NGINX) cmdline.cp inittab.cp
 
-service:copy.rc copy.nginx cmdline.cp $(VSID_RC) $(VSID_NGINX)
+service:copy.rc copy.nginx cmdline.cp inittab.cp $(VSID_RC) $(VSID_NGINX)
 	sync
 copy.rc:
 	cp -f ./vsido.*.rc /etc/init.d/
@@ -27,6 +27,8 @@ copy.nginx:
 	
 cmdline.cp:
 	cp -f ./cmdline.txt /boot/cmdline.txt
+inittab.cp:
+	cp -f ./inittab /etc/inittab
 		
 $(VSID_NGINX):
 	echo "set to auto boot $@"
