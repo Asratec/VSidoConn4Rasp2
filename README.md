@@ -13,7 +13,7 @@ Raspbery pi 2 Boardの準備.
 
 	
 ソースコードをビルドする.  
-1.Intel Edisonのコマンドラインから、ビルド必要環境をインストールする。  
+1.コマンドラインから、ビルド必要環境をインストールする。  
    wget --no-check-certificate -O - https://asratec.github.io/VSidoConn4Rasp2/buildenv.sh | sudo sh  
 2.ソースコードをチェックアウトする  
   git clone https://github.com/Asratec/VSidoConn4Rasp2.git  
