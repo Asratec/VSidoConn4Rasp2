@@ -25,10 +25,11 @@ mkdir -p /opt/vsido/usr/etc/
 touch /opt/vsido/usr/etc/bt.bind
 if [ "" = "${1}" ] ; then
 	address=`cat /opt/vsido/usr/etc/bt.bind`
-	rfcomm bind ${COMM_VSIDO}  ${address}
+	rfcomm  connect hci0 ${address} &
 else 
-	rfcomm bind ${COMM_VSIDO}  ${1}
+	rfcomm  connect hci0 ${1}  &
 	echo "${1}" >/opt/vsido/usr/etc/bt.bind
 fi
-
+sleep 10
+ln -sf /dev/rfcomm0 /dev/${COMM_VSIDO}
 sync
