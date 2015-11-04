@@ -304,12 +304,15 @@ void responseWS(const string &msg)
 		{
     		perror("setsockopt failed\n");
 		}
-		auto ret = libwebsocket_write(wsi, (unsigned char*)msg.c_str(), msg.size(), LWS_WRITE_TEXT);
+        unsigned char *data = new unsigned char [LWS_SEND_BUFFER_PRE_PADDING + msg.size() + LWS_SEND_BUFFER_POST_PADDING];
+        memcpy(&data[LWS_SEND_BUFFER_PRE_PADDING],msg.c_str(),msg.size());
+		auto ret = libwebsocket_write(wsi, (unsigned char*)&data[LWS_SEND_BUFFER_PRE_PADDING], msg.size(), LWS_WRITE_TEXT);
 		DUMP_VAR(ret);
 		if(ret <msg.size() )
 		{
 			badCB.push_back(wsi);
 		}
+        delete []data;
 	}
 	for(auto wsi : badCB)
 	{

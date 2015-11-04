@@ -15,9 +15,10 @@
     <!--STYLES END-->
     
 	<!--SCRIPTS-->
-<script src="/js/jquery-2.1.1.min.js"></script>
-<script src="/js/jquery.mobile-1.4.5.min.js"></script>
-<script src="/js/vsido.web.js"></script>
+	<script src="/js/jquery-2.1.1.min.js"></script>
+	<script src="/js/jquery.mobile-1.4.5.min.js"></script>
+	<script src="/js/vsido.client.api.js"></script>
+	<script src="/js/vsido.client.config.js"></script>
 <!--SCRIPTS END-->
 	
 	
@@ -28,14 +29,15 @@
 
     <script type="text/javascript">
 
-var vsido = new VSidoWeb();
+var connect = new vsido.Connect();
 
 function ConnectRobot(e) {
 //	console.log(e);
 //	console.log(e.name);
 	if(e.name) {
-		var device = {'mac':e.name};
-		vsido.bindBT(device);
+		var pair = new vsido.PairBluetooth(e.name);
+		console.log(JSON.stringify(pair));
+		connect.send(pair);
 	}
 }
 
@@ -62,9 +64,11 @@ $(function(){
 	fillTable(emptyDevice);
 	
 	$('#vsido_bt_scan').click(function(){
-		vsido.scanBT(function(json_data) {
+		var scan = new vsido.ScanBluetooth();
+		console.log(JSON.stringify(scan));
+		connect.send(scan,function(json_data) {
 			console.log(json_data);
-			if(json_data['type'] && json_data['type'] == 'scanBT') {
+			if(json_data['type'] && (json_data['type'] == 'ScanBluetooth' || json_data['type'] == 'scanBT' )) {
 				fillTable(json_data);
 			}
 		});
@@ -91,7 +95,7 @@ $(function(){
 </div>
 
 <div>
-<font size="5" color="#ff0000">「接続」ボタンを押した後、30秒を待ってからIntel　Edison電源を入れなおしてください。</font>
+<font size="5" color="#ff0000">「接続」ボタンを押した後、30秒を待ってからraspberry pi電源を入れなおしてください。</font>
 </div>
    <div id="vsido_div_top">
      <label>要求<label/>
