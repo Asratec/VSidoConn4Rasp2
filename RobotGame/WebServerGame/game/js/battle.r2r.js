@@ -1,6 +1,6 @@
 /**
 * ロボット間通信クラス。
-* @class VSidoR2R
+* @class BattleR2R
 * @constructor
 * @param {json} config 設定情報。
 * @param {String} config[i] 自分のIPアドレス。設定されなかった場合、window.location.hostnameを使用する
@@ -8,17 +8,17 @@
 * @param {function} cb コールバック
 * @example
 * <pre> <code>
-* var r2r = new VSidoR2R({'i':'192.168.11.2','you':'192.168.11.4'},
+* var r2r = new BattleR2R({'i':'192.168.11.2','you':'192.168.11.4'},
 *                         function callback(msg){
 *	                         console.log(msg);
 *                         });
-* var r2r = new VSidoR2R({'you':'192.168.11.4'},
+* var r2r = new BattleR2R({'you':'192.168.11.4'},
 *                         function callback(msg){
 *	                         console.log(msg);
 *                         });
 * </code></pre>
 **/
-var VSidoR2R = function(config,cb){
+var BattleR2R = function(config,cb){
 	this.ip = null;
 	if(config && config['i']) {
 		this.ip = config['i'];
@@ -69,7 +69,7 @@ var VSidoR2R = function(config,cb){
 	* function listen(msg) {
 	*	console.log(msg);
 	* }
-    * var r2r = new VSidoR2R({'i':'192.168.11.2','you':'192.168.11.4'},listen);
+    * var r2r = new BattleR2R({'i':'192.168.11.2','you':'192.168.11.4'},listen);
 	* var msg = {'attack':{}};
 	* r2r.send(msg);
 	* </code></pre>

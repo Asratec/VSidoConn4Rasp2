@@ -1,16 +1,16 @@
 /**
 * USBカメラクラス。
-* @class VSidoCamera
+* @class Camera
 * @constructor
 * @param {json} config 設定情報、IPアドレスのみ。 
 * 設定されなかった場合、window.location.hostnameを使用する。
 * @example
 * <pre> <code>
-* var vsido = new VSidoCamera({'ip':'192.168.11.2'});
-* var camera = new VSidoCamera();
+* var camera = new Camera({'ip':'192.168.11.2'});
+* var camera = new Camera();
 * </code></pre>
 **/
-var VSidoCamera = function(config){
+var Camera = function(config){
 	this.ip = null;
 	if(config && config['ip']) {
 		this.ip = config['ip'];
@@ -25,8 +25,8 @@ var VSidoCamera = function(config){
 	* @param {img} 		raw 	image要素
     * @example
     * <pre><code>
-	* var camera = new VSidoCamera({'ip':'192.168.11.2'});
-    * camera.viewRaw($('#vsido_camera_raw'));	
+	* var camera = new Camera({'ip':'192.168.11.2'});
+    * camera.viewRaw($('#camera_raw'));	
 	* </code></pre>
 	* </code></pre>
 	**/
@@ -40,8 +40,8 @@ var VSidoCamera = function(config){
 	* @param {img} 		marker 	image要素
     * @example
     * <pre><code>
-	* var camera = new VSidoCamera({'ip':'192.168.11.2'});
-    * camera.viewMarkerDetect($('#vsido_camera_marker'));	
+	* var camera = new Camera({'ip':'192.168.11.2'});
+    * camera.viewMarkerDetect($('#camera_marker'));	
 	* </code></pre>
 	**/
 	this.viewMarkerDetect = function(marker,ip) {
@@ -49,21 +49,7 @@ var VSidoCamera = function(config){
 		marker.attr('src', 'http://'+ this.ip +':18083/marker?i=' + Math.random());
 	}
 
-	/**
-	* Sub画像を表示する。
-	* @method viewSub
-	* @param {img} 		sub 	image要素
-    * @example
-    * <pre><code>
-	* var camera = new VSidoCamera({'ip':'192.168.11.2'});
-    * camera.viewSub($('#camera_sub'));	
-	* </code></pre>
-	**/
-	this.viewSub = function(marker,ip) {
-		var random = Math.floor(Math.random() * Math.pow(2, 31));
-		marker.attr('src', 'http://'+ this.ip +':18086/sub?i=' + Math.random());
-	}
-
+	
 	this.ws = null;
 	this.cb = null;
 	this.ready = false;
@@ -95,7 +81,7 @@ var VSidoCamera = function(config){
 	* @param {function} cb 通知のコールバック
     * @example
     * <pre><code>
-	* var camera = new VSidoCamera({'ip':'192.168.11.2'});
+	* var camera = new Camera({'ip':'192.168.11.2'});
 	* camera.listen(function(msg){
     *   console.log(msg);
     * });
@@ -117,7 +103,7 @@ var VSidoCamera = function(config){
 	* @param {json} color 色
     * @example
     * <pre><code>
-	* var camera = new VSidoCamera({'ip':'192.168.11.2'});
+	* var camera = new Camera({'ip':'192.168.11.2'});
 	* // 緑マーカー
 	* var color = {
 	* 	'HueL':0x25, /// 色相のしきい値-下限[0x0,0xFF]

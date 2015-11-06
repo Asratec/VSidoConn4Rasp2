@@ -31,6 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <iostream>
 #include <list>
+#include <vector>
+#include <map>
 using namespace std;
 #include <cstdlib>
 #include <sys/types.h>
@@ -42,6 +44,7 @@ using namespace std;
 #include <netdb.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h> 
 #include <unistd.h> 
 
 #include "debug.h"
@@ -56,12 +59,18 @@ static mutex mtxMarker;
 static mutex mtxConnection;
 
 
-
 #include <libwebsockets.h>
 
 
-void recieveMessage(const string &json);
-void responseWS(const string &msg);
+static mutex mtxRecive;
+
+
+static mutex mtxWSAck;
+static map<libwebsocket *,list<string>> globalAckList;
+
+
+void recieveMessage(const string json);
+void responseWS(const string msg);
 
 static int callback_http(struct libwebsocket_context * ctx,
                          struct libwebsocket *wsi,
@@ -79,11 +88,14 @@ static int callback_ws_info(struct libwebsocket_context * ctx,
                                    enum libwebsocket_callback_reasons reason,
                                    void *user, void *inMsg, size_t lenMsg)
 {
+  	DUMP_VAR(reason);
+	string reasonMSG;
    
     switch (reason) {
         case LWS_CALLBACK_ESTABLISHED: // just log message that someone is connecting
             printf("connection established\n");
-        	DUMP_VAR(wsi);
+    		reasonMSG = "LWS_CALLBACK_ESTABLISHED";
+        	DUMP_VAR(reasonMSG);
         	if(nullptr == wsi)
         	{
         		return 0;
@@ -92,8 +104,13 @@ static int callback_ws_info(struct libwebsocket_context * ctx,
     			lock_guard<mutex> lock(mtxConnection);
     			callbacks.push_back(wsi);
     		}
+    		libwebsocket_callback_on_writable(ctx, wsi);
+    		reasonMSG = "LWS_CALLBACK_ESTABLISHED";
+        	DUMP_VAR(reasonMSG);
             break;
         case LWS_CALLBACK_RECEIVE: { // the funny part
+    		reasonMSG = "LWS_CALLBACK_RECEIVE";
+        	DUMP_VAR(reasonMSG);
         	if(nullptr == wsi)
         	{
         		DUMP_VAR(wsi);
@@ -109,10 +126,53 @@ static int callback_ws_info(struct libwebsocket_context * ctx,
         	{
         		printf("LWS_CALLBACK_RECEIVE exception %s:%d\n",__FILE__,__LINE__);
         	}
+    		reasonMSG = "LWS_CALLBACK_RECEIVE";
+        	DUMP_VAR(reasonMSG);
             break;
         }
+		case LWS_CALLBACK_SERVER_WRITEABLE:
+		{
+    		reasonMSG = "LWS_CALLBACK_SERVER_WRITEABLE";
+        	DUMP_VAR(reasonMSG);
+			lock_guard<mutex> lock(mtxWSAck);
+			auto queAck = globalAckList.find(wsi);
+			if(globalAckList.end() == queAck)
+			{
+	    		reasonMSG = "LWS_CALLBACK_SERVER_WRITEABLE";
+	        	DUMP_VAR(reasonMSG);
+				break;
+			}
+			if(queAck->second.empty())
+			{
+	    		reasonMSG = "LWS_CALLBACK_SERVER_WRITEABLE";
+	        	DUMP_VAR(reasonMSG);
+				break;
+			}
+			auto msg = queAck->second.front();
+	        DUMP_VAR(msg.size());
+			if(msg.empty() || 1024 *10 <  msg.size() )
+			{
+				break;
+			}
+	        unsigned char *data = new unsigned char [LWS_SEND_BUFFER_PRE_PADDING + msg.size() + LWS_SEND_BUFFER_POST_PADDING];
+	        DUMP_VAR((int)data);
+			memcpy(&data[LWS_SEND_BUFFER_PRE_PADDING],msg.c_str(),msg.size());
+			auto ret = libwebsocket_write(wsi, &data[LWS_SEND_BUFFER_PRE_PADDING], msg.size(), LWS_WRITE_TEXT);
+	        if(ret < msg.size())
+			{
+				DUMP_VAR(wsi);
+			}
+	        delete []data;
+			libwebsocket_callback_on_writable(ctx,wsi);
+			queAck->second.pop_front();
+    		reasonMSG = "LWS_CALLBACK_SERVER_WRITEABLE";
+        	DUMP_VAR(reasonMSG);
+			break;
+		}
     	case LWS_CALLBACK_CLOSED:
     	{
+    		reasonMSG = "LWS_CALLBACK_CLOSED";
+        	DUMP_VAR(reasonMSG);
             printf("connection closed\n");
         	DUMP_VAR(wsi);
         	if(nullptr == wsi)
@@ -123,6 +183,8 @@ static int callback_ws_info(struct libwebsocket_context * ctx,
     			lock_guard<mutex> lock(mtxConnection);
     			callbacks.remove(wsi);
     		}
+    		reasonMSG = "LWS_CALLBACK_CLOSED";
+        	DUMP_VAR(reasonMSG);
     		break;
     	}
         default:
@@ -191,7 +253,7 @@ void doWebSocket(void)
 	// infinite loop, to end this server send SIGTERM. (CTRL+C)
 	while (true)
 	{
-		libwebsocket_service(context, 100);
+		libwebsocket_service(context, 1000);
 	}
 
 	libwebsocket_context_destroy(context);
@@ -204,6 +266,9 @@ extern int col_ch2_lower;
 extern int col_ch2_upper; //色認識での彩度のしきい値(小),（大）
 extern int col_ch3_lower;
 extern int col_ch3_upper; //色認識での輝度のしきい値(小),（大）
+
+void updateMarkerColor(void);
+
 
 #include "picojson.h"
 
@@ -225,10 +290,10 @@ static void tryKeepMarker(const string &json )
 
 
 void sendR2R(picojson::value &raw);
-void writeR2RSocket(const string &msg,const string &ip);
+void writeR2RSocket(const string msg,const string ip);
 
 
-void recieveMessage(const string &json)
+void recieveMessage(const string json)
 {
     picojson::value _rawV;
 	try
@@ -267,7 +332,6 @@ void recieveMessage(const string &json)
 			DUMP_VAR(ch3U);
 			col_ch3_upper = (int )ch3U;
 			
-			
 		}
 		if(_rawV.contains("r2r"))
 		{
@@ -281,13 +345,14 @@ void recieveMessage(const string &json)
 	}
 }
 
-void responseWS(const string &msg)
+void responseWS(const string msg)
 {
 	lock_guard<mutex> lock(mtxConnection);
 	DUMP_VAR(callbacks.size());
 	list<struct libwebsocket *> badCB;
 	for(auto wsi : callbacks)
 	{
+#if 0
 		struct timeval timeout;      
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 1000 * 500;
@@ -304,7 +369,25 @@ void responseWS(const string &msg)
 		{
     		perror("setsockopt failed\n");
 		}
-        unsigned char *data = new unsigned char [LWS_SEND_BUFFER_PRE_PADDING + msg.size() + LWS_SEND_BUFFER_POST_PADDING];
+#endif
+		lock_guard<mutex> lock(mtxWSAck);
+		auto que = globalAckList.find(wsi);
+		if(globalAckList.end() != que)
+		{
+			que->second.push_back(msg);
+			libwebsocket_callback_on_writable_all_protocol(libwebsockets_get_protocol(wsi));
+			DUMP_VAR(wsi);
+		}
+		else
+		{
+			list<string> acks = {msg};
+			globalAckList[wsi] = acks;
+			libwebsocket_callback_on_writable_all_protocol(libwebsockets_get_protocol(wsi));
+			DUMP_VAR(wsi);
+		}
+		/*
+		
+		 unsigned char *data = new unsigned char [LWS_SEND_BUFFER_PRE_PADDING + msg.size() + LWS_SEND_BUFFER_POST_PADDING];
         memcpy(&data[LWS_SEND_BUFFER_PRE_PADDING],msg.c_str(),msg.size());
 		auto ret = libwebsocket_write(wsi, (unsigned char*)&data[LWS_SEND_BUFFER_PRE_PADDING], msg.size(), LWS_WRITE_TEXT);
 		DUMP_VAR(ret);
@@ -312,7 +395,7 @@ void responseWS(const string &msg)
 		{
 			badCB.push_back(wsi);
 		}
-        delete []data;
+		*/
 	}
 	for(auto wsi : badCB)
 	{
@@ -327,7 +410,23 @@ void notifyMarker(const string &json)
 		lock_guard<mutex> lock(mtxMarker);
 		tryKeepMarker(json);
 	}
-	responseWS(json);
+
+	struct timeval now= {0,0};
+	gettimeofday(&now,NULL);
+	static struct timeval pre = {now.tv_sec,now.tv_usec};
+	
+	unsigned int mlisec = (now.tv_sec - pre.tv_sec) * 1000 + (now.tv_usec - pre.tv_usec)/1000;
+	if(mlisec > 100)
+	{
+		pre.tv_sec = now.tv_sec;
+		pre.tv_usec = now.tv_usec;
+		responseWS(json);
+	}
+	else
+	{
+		DUMP_VAR(mlisec);
+	}
+
 }
 
 
@@ -421,8 +520,34 @@ using namespace std;
 	#define _PERROR(x) 
 #endif
 
-void writeR2RSocket(const string &msg,const string &ip)
+
+#if 0
+static map<string,int> globalSocket;
+static list<string> globalList;
+#endif
+
+void writeR2RSocket(const string msg,const string ip)
 {
+	DUMP_VAR(ip);
+#if 0
+	auto soketIt = globalSocket.find(ip);
+	if(soketIt != globalSocket.end())
+	{
+		struct timeval timeout;
+		timeout.tv_sec = 5;
+		timeout.tv_usec = 0;
+		if(setsockopt (soketIt->second, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,sizeof(timeout)) < 0)
+		{
+	    	close(soketIt->second);
+			globalSocket.erase(soketIt);
+			return;
+		}
+		DUMP_VAR(soketIt->second);
+		::write(soketIt->second,msg.c_str(),msg.size());
+		return ;
+	}
+#endif
+	
 	int sockfd;
     struct sockaddr_in servaddr;
  
@@ -437,35 +562,53 @@ void writeR2RSocket(const string &msg,const string &ip)
     servaddr.sin_family=AF_INET;
     servaddr.sin_port=htons(22100);
 	
+	DUMP_VAR(ip);
 	int ret = inet_pton(AF_INET,ip.c_str(),&(servaddr.sin_addr));
 	if(0 > ret)
 	{
 		_PERROR("inet_pton");
 		return;
 	}
+	DUMP_VAR(sockfd);
     ret = connect(sockfd,(struct sockaddr *)&servaddr,sizeof(servaddr));
 	if(0 > ret)
 	{
-		_PERROR("connect");
-		return;
-	}
-	
-	
-    /// read ack
-	char data[1024] = {0};
-
-	struct timeval timeout;      
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 1000 * 500;
-	if(setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,sizeof(timeout)) < 0)
-	{
+		_PERROR("Connect::");
 		_PERROR("setsockopt failed\n");
 		return;
 	}
 	
+	DUMP_VAR(ip);
+	struct timeval timeout;      
+	timeout.tv_sec = 5;
+	timeout.tv_usec = 0;
+	if(setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,sizeof(timeout)) < 0)
+	{
+	
+    	close(sockfd);
+		return;
+	}
+	
+	
+	DUMP_VAR(sockfd);
     ::write(sockfd,msg.c_str(),msg.size());
-    
-    close(sockfd);
+	DUMP_VAR(sockfd);
+
+#if 0
+	globalSocket[ip] = sockfd;
+	globalList.push_back(ip);
+	while(globalList.size() > 10)
+	{
+		auto ipAdress = globalList.front();
+		globalList.pop_front();
+		auto oldIt = globalSocket.find(ipAdress);
+		if(oldIt != globalSocket.end())
+		{
+	    	close(oldIt->second);
+			globalSocket.erase(oldIt);
+		}
+	}
+#endif
 }
 
 

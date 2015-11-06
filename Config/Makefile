@@ -8,6 +8,7 @@ VSID_RC += vsido.streamingsub.rc
 VSID_NGINX := nginx.vsido.web.game
 VSID_NGINX += nginx.vsido.web.root
 VSID_NGINX += nginx.vsido.web.server
+VSID_NGINX += nginx.vsido.web.debug
 
 
 .PHONY:service $(VSID_RC) $(VSID_NGINX) cmdline.cp inittab.cp

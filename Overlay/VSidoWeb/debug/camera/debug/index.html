@@ -20,13 +20,12 @@
 	<!--SCRIPTS-->
 <script src="/js/jquery-2.1.1.min.js"></script>
 <script src="/js/jquery.mobile-1.4.5.min.js"></script>
-<script src="/js/vsido.camera.js"></script>
 <script src="/js/vsido.canvas.acceleration.js"></script>
 <script src="/js/vsido.canvas.hand.js"></script>
 <script src="/js/vsido.canvas.joystick.js"></script>
 <script src="/js/vsido.canvas.js"></script>
 <script src="/js/vsido.canvas.sensorstick.js"></script>
-<script src="/js/vsido.web.js"></script>
+<script src="/js/battle.camera.js"></script>
 <!--SCRIPTS END-->
 	
 	
@@ -37,7 +36,7 @@
 
     <script type="text/javascript">
 	$(function(){
-		var camera = new VSidoCamera();
+		var camera = new Camera();
 		camera.listen(function(msg){
 			console.log(msg);
 			$('#vsido_camera_info').text(JSON.stringify(msg));

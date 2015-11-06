@@ -1,6 +1,14 @@
 include_directories(${PROJECT_SOURCE_DIR}/prebuild/websockets/include)
 LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/prebuild/websockets/lib)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -pthread ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+
+
+
+set(CMAKE_C_FLAGS_DEBUG     "${CMAKE_C_FLAGS} -g -fprofile-arcs -ftest-coverage")
+set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS} -g -fprofile-arcs -ftest-coverage")
+set(CMAKE_LD_FLAGS_DEBUG    "${CMAKE_LD_FLAGS} -g -fprofile-arcs")
 
 add_executable (VSido.cam 
 	./capture.cpp
@@ -30,7 +38,7 @@ target_link_libraries(VSido.cam
 	#opencv_stitching
 	#opencv_superres 
 	#opencv_ts
-	opencv_video
+	#opencv_video
 	#opencv_videostab 
 	v4l2 
 	rt 

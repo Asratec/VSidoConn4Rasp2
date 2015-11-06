@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="Shift-JIS">
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />  
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<title>V-SidoWeb TargetAngel</title>
+	
+	<script src="./libs/jquerymobile/1.4.3/jquery.mobile.min.js"></script>
+	<link rel="stylesheet" href="./libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
+	<script src="./libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="./libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+	<script src="./libs/jquery/jquery.ui.touch-punch.min.js"></script>
+	<script src="./libs/common.js"></script>
+	<link rel="stylesheet" href="./libs/common.css" />
+	
+	<!-- V-SidoClient Apiの挿入 -->
+	<script src="./js/vsido.client.api.js"></script>
+	<script src="./js/vsido.client.config.js"></script>
+
+	<script>
+	var connect=null;
+	// 選択したMACデバイスとペアリングするコマンド
+	function BindRobot(e){
+		if(typeof(e.name)!='undefined'){
+			var pair = new vsido.PairBluetooth(e.name);
+			connect.send(pair);
+		}
+	}
+	$(function(){
+		var qparam=getUrlVars()['setip'];
+		if(qparam){
+			connect=new vsido.Connect({'ip':qparam});
+		}else{
+			connect=new vsido.Connect();
+		}
+		
+		
+		// 検出した情報の動的表示生成
+		function FillTable(jsonData){
+			$('#connection_table tr:first').nextAll().remove();
+			jsonData['devices'].forEach(function(device){
+				var dat='<tr><td>'+device['name']+'</td><td>'+device['mac']+'</td><td><input class="bindbtn" type="button" value="接続" onclick="BindRobot(this)" name="'+device['mac']+'" /></td></tr>';
+				$('#connection_table tr:last').after(dat);
+			});
+			
+			var obj=$('#btn_scan');
+			obj.removeClass('btn_busy');
+			obj.addClass('btn_ready');
+			obj.text('スキャン');
+		}
+		
+		// Bluetoothデバイスの検出コマンド
+		$('#btn_scan').click(function(){
+			var obj=$(this);
+			if(obj.hasClass('btn_busy')) return;
+			
+			obj.text('スキャン中・・・');
+			obj.removeClass('btn_ready');
+			obj.addClass('btn_busy');
+			
+			// Deviceのスキャン
+			var scan = new vsido.ScanBluetooth();
+			connect.send(scan,function(jsonData){
+				if(typeof(jsonData['type'])!='undefined' && (jsonData['type']=='ScanBluetooth'  || json_data['type'] == 'scanBT')){
+					FillTable(jsonData);
+				}
+			});	
+		});
+		
+	});
+	</script>
+
+	<style>
+	h1{display:none;}
+	.btn_ready{}
+	.btn_ready:hover{
+		cursor:pointer;
+		color:#FFF;
+	}
+	.btn_busy{color:#222;}
+	
+	#btn_scan{
+		margin:0.2em auto;
+		padding:0.8em;
+		font-weight:bold;
+	}
+	#connection_table{
+		padding:auto;
+		margin:auto;
+		width:90%;
+	}
+	#connection_table td{
+		padding:5px;
+		margin:5px;
+	}
+	
+	.bindbtn{
+		padding:5px;
+		margin:5px;
+	}
+	</style>
+</head>
+
+<body>
+	<div id="nav-ip">
+		<br>
+		<h2>IPアドレス</h2>
+		<input type="text" id="ip-1" value="">
+		<input type="text" id="ip-2" value="">
+		<input type="text" id="ip-3" value="">
+		<input type="text" id="ip-4" value="">
+		<div id="ipset">設定</div>
+	</div>
+	<div id="nav-div">
+		<div class="mainbtn" data-id="0" title="">ホームに戻る</div>
+	</div>
+	<div id="content-div">
+		<div id="btn_scan" class="btn_ready" title="">スキャン</div>
+		<table id="connection_table" border="1">
+				<tr>
+					<td width="40%">名称</td>
+					<td width="40%">MACアドレス</td>
+					<td>接続</td>
+				</tr>
+		</table>
+	</div>
+	<br>
+	<font size="4" color="#ff0000">「接続」ボタンを押した後、30秒を待ってからRaspberry Pi電源を入れなおしてください。</font>
+	<div id="info-div">
+	<div>
+	<div class="spacer"></div>
+</body>
+</html>

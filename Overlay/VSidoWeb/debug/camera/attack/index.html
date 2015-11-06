@@ -20,13 +20,13 @@
 	<!--SCRIPTS-->
 <script src="/js/jquery-2.1.1.min.js"></script>
 <script src="/js/jquery.mobile-1.4.5.min.js"></script>
-<script src="/js/vsido.camera.js"></script>
 <script src="/js/vsido.canvas.acceleration.js"></script>
 <script src="/js/vsido.canvas.hand.js"></script>
 <script src="/js/vsido.canvas.joystick.js"></script>
 <script src="/js/vsido.canvas.js"></script>
 <script src="/js/vsido.canvas.sensorstick.js"></script>
-<script src="/js/vsido.web.js"></script>
+<script src="/js/battle.camera.js"></script>
+<script src="/js/battle.r2r.js"></script>
 <!--SCRIPTS END-->
 	
 	
@@ -36,22 +36,22 @@
     <a href="/" target="_self">トップに戻る</a>
 
     <script type="text/javascript">
-	$(function(){
-		var camera = new VSidoCamera();
-		camera.viewRaw($('#vsido_camera_raw'));
-		//camera.viewRaw($('#vsido_camera_raw'),'192.168.11.2');
-		//camera.viewFaceDetect($('#vsido_camera_face'));
-		//camera.viewFaceDetect($('#vsido_camera_face'),'192.168.11.2');	
-		camera.viewMarkerDetect($('#vsido_camera_marker'));
-		//camera.viewMarkerDetect($('#vsido_camera_marker'),'192.168.11.2');
-		camera.viewTextDetect($('#vsido_camera_text'));
-		//camera.viewTextDetect($('#vsido_camera_text'),'192.168.11.2');
-		
-		camera.listen(function(msg){
-			console.log(msg);
+	function callback(msg) {
+		if(msg &&msg['r2r'] && msg['r2r']['attack'] ) {
 			$('#vsido_camera_info').text(JSON.stringify(msg));
+		}
+	}
+	$(function(){
+		var r2r = new BattleR2R({'you':'192.168.11.10'},callback);
+		
+		$('#vsido_debug_attack').click(function(){
+			var msg = {'attack':{}};
+			r2r.send(msg);
 		});
-
+		$('#vsido_debug_free').click(function(){
+			var msg2 = {'type':'free','msg':'hello'};
+			r2r.send(msg2);
+		});
 	});
 </script>
 <br/>
@@ -60,17 +60,13 @@
 <a href="/camera/attack" target="_self">攻撃サンプル</a>
 <br/>
 
-<div id="vsido_camera_frame">
-	<img src="#" id="vsido_camera_raw">
-	<br/>
-	<!--img src="#" id="vsido_camera_face"-->
-	<img src="#" id="vsido_camera_marker">
-	<br/>
-	<!--img src="#" id="vsido_camera_text"-->
-	<br/>
-	<div id="vsido_camera_info"></div>
-	
-</div>
+
+<input type="submit" id="vsido_debug_attack" value="攻撃">
+
+<input type="submit" id="vsido_debug_free" value="自由メッセージ送信">
+
+<div id="vsido_camera_info" ></div>
+<br/>
 
 
    <div id="vsido_div_top">

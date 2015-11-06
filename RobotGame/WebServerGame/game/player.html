@@ -13,12 +13,12 @@
 	<script src="./libs/jquerymobile/1.4.3/jquery.mobile.min.js"></script>
 
 	<link rel="stylesheet" href="./libs/common.css" />	
-	<script src="../ip2/libs/common.js"></script>
+	<script src="../libs/common.js"></script>
 	
-	<!-- V-SidoWeb -->
-	<script src="./js/vsido.web.js"></script>
-	<script src="./js/vsido.camera.js"></script>
-	<script src="./js/vsido.r2r.js"></script>
+	<!-- V-Sido script -->
+	<script src="./js/vsido.client.api.js"></script>
+	<script src="./js/battle.camera.js"></script>
+	<script src="./js/battle.r2r.js"></script>
 	
 	<script>
 	$(function(){
@@ -52,7 +52,7 @@
 			MAX_DEVICE_ROT:60,
 			MINUS_CAMERA_ORI:300,
 			CAMERA_ROT_DELIMITER:Math.sin(59*Math.PI/180),
-			MAX_CAMERA_ROT:60,
+			MAX_CAMERA_ROT:30,
 			
 			MAX_SHIELD:150,
 			MAX_POWER:150,
@@ -100,24 +100,24 @@
 		
 		var CUSTOM_MOTION={
 			'lowerhands':{'inuse':false,'playframe':0,'motion':[{'kid':2,'dat':[
-			[0,0,-100]]
+			[-15,0,-95]]
 			},{'kid':3,'dat':[
-			[0,0,-100]]
+			[15,0,-95]]
 			}]},
 			'crouch':{'inuse':false,'playframe':0,'motion':[{'kid':4,'dat':[
-			[0,0,-90],[0,0,-89],[0,0,-88],[0,0,-87],[0,0,-86],[0,0,-85],[0,0,-84],[0,0,-83],[0,0,-82],[0,0,-81],[0,0,-80],[0,0,-79],[0,0,-78],[0,0,-77],[0,0,-76],[0,0,-75],[0,0,-74],[0,0,-73],[0,0,-72],[0,0,-71],[0,0,-70],[0,0,-69],[0,0,-68],[0,0,-67],[0,0,-66],[0,0,-65],[0,0,-64],[0,0,-63],[0,0,-62],[0,0,-61],[0,0,-60]]
+			[0,20,-90],[0,20,-89],[0,20,-88],[0,20,-87],[0,20,-86],[0,20,-85],[0,20,-84],[0,20,-83],[0,20,-82],[0,20,-81],[0,20,-80],[0,20,-79],[0,20,-78],[0,20,-77],[0,20,-76],[0,20,-75],[0,20,-74],[0,20,-73],[0,20,-72],[0,20,-71],[0,20,-70],[0,20,-69],[0,20,-68],[0,20,-67],[0,20,-66],[0,20,-65],[0,20,-64],[0,20,-63],[0,20,-62],[0,20,-61],[0,20,-60]]
 			},{'kid':5,'dat':[
-			[0,0,-90],[0,0,-89],[0,0,-88],[0,0,-87],[0,0,-86],[0,0,-85],[0,0,-84],[0,0,-83],[0,0,-82],[0,0,-81],[0,0,-80],[0,0,-79],[0,0,-78],[0,0,-77],[0,0,-76],[0,0,-75],[0,0,-74],[0,0,-73],[0,0,-72],[0,0,-71],[0,0,-70],[0,0,-69],[0,0,-68],[0,0,-67],[0,0,-66],[0,0,-65],[0,0,-64],[0,0,-63],[0,0,-62],[0,0,-61],[0,0,-60]]
+			[0,20,-90],[0,20,-89],[0,20,-88],[0,20,-87],[0,20,-86],[0,20,-85],[0,20,-84],[0,20,-83],[0,20,-82],[0,20,-81],[0,20,-80],[0,20,-79],[0,20,-78],[0,20,-77],[0,20,-76],[0,20,-75],[0,20,-74],[0,20,-73],[0,20,-72],[0,20,-71],[0,20,-70],[0,20,-69],[0,20,-68],[0,20,-67],[0,20,-66],[0,20,-65],[0,20,-64],[0,20,-63],[0,20,-62],[0,20,-61],[0,20,-60]]
 			}]},
 			'standup':{'inuse':false,'playframe':0,'motion':[{'kid':4,'dat':[
-			[0,0,-60],[0,0,-61],[0,0,-62],[0,0,-63],[0,0,-64],[0,0,-65],[0,0,-66],[0,0,-67],[0,0,-68],[0,0,-69],[0,0,-70],[0,0,-71],[0,0,-72],[0,0,-73],[0,0,-74],[0,0,-75],[0,0,-76],[0,0,-77],[0,0,-78],[0,0,-79],[0,0,-80],[0,0,-81],[0,0,-82],[0,0,-83],[0,0,-84],[0,0,-85],[0,0,-86],[0,0,-87],[0,0,-88],[0,0,-89],[0,0,-90]]
+			[0,20,-60],[0,20,-61],[0,20,-62],[0,20,-63],[0,20,-64],[0,20,-65],[0,20,-66],[0,20,-67],[0,20,-68],[0,20,-69],[0,20,-70],[0,20,-71],[0,20,-72],[0,20,-73],[0,20,-74],[0,20,-75],[0,20,-76],[0,20,-77],[0,20,-78],[0,20,-79],[0,20,-80],[0,20,-81],[0,20,-82],[0,20,-83],[0,20,-84],[0,20,-85],[0,20,-86],[0,20,-87],[0,20,-88],[0,20,-89],[0,20,-90]]
 			},{'kid':5,'dat':[
-			[0,0,-60],[0,0,-61],[0,0,-62],[0,0,-63],[0,0,-64],[0,0,-65],[0,0,-66],[0,0,-67],[0,0,-68],[0,0,-69],[0,0,-70],[0,0,-71],[0,0,-72],[0,0,-73],[0,0,-74],[0,0,-75],[0,0,-76],[0,0,-77],[0,0,-78],[0,0,-79],[0,0,-80],[0,0,-81],[0,0,-82],[0,0,-83],[0,0,-84],[0,0,-85],[0,0,-86],[0,0,-87],[0,0,-88],[0,0,-89],[0,0,-90]]
+			[0,20,-60],[0,20,-61],[0,20,-62],[0,20,-63],[0,20,-64],[0,20,-65],[0,20,-66],[0,20,-67],[0,20,-68],[0,20,-69],[0,20,-70],[0,20,-71],[0,20,-72],[0,20,-73],[0,20,-74],[0,20,-75],[0,20,-76],[0,20,-77],[0,20,-78],[0,20,-79],[0,20,-80],[0,20,-81],[0,20,-82],[0,20,-83],[0,20,-84],[0,20,-85],[0,20,-86],[0,20,-87],[0,20,-88],[0,20,-89],[0,20,-90]]
 			}]},
 			'attack':{'inuse':false,'playframe':0,'motion':[{'kid':2,'dat':[
-			[0,0,-100],[0,-25,-75],[0,-50,-50],[0,-75,-25],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100]]
+			[0,0,-100],[0,-25,-75],[0,-50,-50],[0,-75,-25],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[-15,0,-25],[-15,0,-35],[-15,0,-45],[-15,0,-55],[-15,0,-65],[-15,0,-75],[-15,0,-85],[-15,0,-95]]
 			},{'kid':3,'dat':[
-			[0,0,-100],[0,-25,-75],[0,-50,-50],[0,-75,-25],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100],[0,0,-100]]
+			[0,0,-100],[0,-25,-75],[0,-50,-50],[0,-75,-25],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[0,-100,0],[15,0,-25],[15,0,-35],[15,0,-45],[15,0,-55],[15,0,-65],[15,0,-75],[15,0,-85],[15,0,-95]]
 			}]},
 			'win':{'inuse':false,'playframe':0,'motion':[{'kid':0,'dat':[]}]},
 			'lose':{'inuse':false,'playframe':0,'motion':[{'kid':0,'dat':[]}]},
@@ -162,19 +162,19 @@
 		};
 		
 		// V-SidoWeb関連
-		//var s_vsido=new VSidoWeb({'ip':s_edison_ip});	// ■操作するロボットを指定・固定したい場合にipを設定
-		var s_vsido=new VSidoWeb();
+		//var s_connect=new vsido.Connect({'ip':s_edison_ip});	// ■操作するロボットを指定・固定したい場合にipを設定
+		var s_connect=new vsido.Connect();
 		
 		var s_camera=null,s_r2r=null;
 		var s_vsido_data={
-			walk:s_vsido.walk(),
-			angle:s_vsido.servoAngle(),
-			ik:s_vsido.ik(),
+			walk:null,
+			angle:null,
+			ik:null,
 		};
-		s_vsido_data.angle["cycle"]=10;
-		s_vsido_data.angle['servo'].push({'sid':2,'angle':0});
+		s_vsido_data.angle = new vsido.SetServoAngle(100);
+		s_vsido_data.angle.addAngle(2,0);
 		
-		s_vsido_data.ik['ikf']['dist']['pos']=true;
+		s_vsido_data.ik = new vsido.SetIK({'position':true});
 		
 		// フラグ操作関連
 		function offflag(bit){s_robot.flags&=~bit};
@@ -543,22 +543,27 @@
 				s_robot.lastprocess=PROCESS_FLAGS.CAMERA;
 				offflag(PROCESS_FLAGS.CAMERA);
 				
+				/*
+				// IKを使うようにする
 				s_vsido_data.angle['servo'][0]['angle']=s_robot.camera;
 				cmd=s_vsido_data.angle;
+				*/
+				s_vsido_data.ik = new vsido.SetIK({'rotation':true});
+				s_vsido_data.ik.setRotation('head',0,0,s_robot.camera);
+				cmd=s_vsido_data.ik;
 				
 			}else if(currprocess==PROCESS_FLAGS.MOTION){
 				s_robot.lastprocess=PROCESS_FLAGS.MOTION
 				offflag(PROCESS_FLAGS.MOTION);
 				
-				s_vsido_data.walk['forward']=s_robot.forward;
-				s_vsido_data.walk['turn']=s_robot.side;
+				s_vsido_data.walk = new vsido.Walk(s_robot.forward,s_robot.side);
 				cmd=s_vsido_data.walk;
 				
 			}else if(currprocess==PROCESS_FLAGS.IK){
 				s_robot.lastprocess=PROCESS_FLAGS.IK;
 				
 				var ikavaiable=0;
-				s_vsido_data.ik['kdts']=[];
+				s_vsido_data.ik = new vsido.SetIK({'position':true});
 				for(var key in CUSTOM_MOTION){
 					var obj=CUSTOM_MOTION[key];
 					if(!obj['inuse']) continue;
@@ -570,12 +575,7 @@
 						var kid=motion[i]['kid'];
 						var dat=motion[i]['dat'];
 						if(currframe<dat.length){
-							var kdt=s_vsido.kdt();
-							kdt['kid']=kid;
-							kdt['kdt']['pos']['x']=dat[currframe][0];
-							kdt['kdt']['pos']['y']=dat[currframe][1];
-							kdt['kdt']['pos']['z']=dat[currframe][2];
-							s_vsido_data.ik['kdts'].push(kdt);
+							s_vsido_data.ik.setPosition(kid,dat[currframe][0],dat[currframe][1],dat[currframe][2]);
 							active++;
 						}
 					}
@@ -600,7 +600,7 @@
 				resetflag();
 			}
 			
-			if(cmd) s_vsido.send(cmd);
+			if(cmd) s_connect.send(cmd);
 		}
 		// デバイスの姿勢制御のバインドを有効・無効化
 		var enable_bind_orientation=true;
@@ -617,13 +617,13 @@
 			resetcamera();
 			delayexec();
 			
-			//s_camera=new VSidoCamera({'ip':s_edison_ip});	// ■カメラ画像をどのipから取得するか	
-			s_camera=new VSidoCamera();
+			//s_camera=new Camera({'ip':s_edison_ip});	// ■カメラ画像をどのipから取得するか	
+			s_camera=new Camera();
 			s_camera.listen(remotecallback);
 			s_camera.viewMarkerDetect($('#camera-image'));
 			
-			//s_r2r=new VSidoR2R({'i':s_edison_ip,'you':s_edison_ip_enemy},remotecallback);	//■対戦する自分・相手のipの指定
-			s_r2r=new VSidoR2R({'you':s_edison_ip_enemy},remotecallback);	// 対戦相手のip
+			//s_r2r=new BattleR2R({'i':s_edison_ip,'you':s_edison_ip_enemy},remotecallback);	//■対戦する自分・相手のipの指定
+			s_r2r=new BattleR2R({'you':s_edison_ip_enemy},remotecallback);	// 対戦相手のip
 		}
 		// 初期化処理
 		//load

@@ -114,8 +114,33 @@ double pyramidScale = 1.1;
 double frameScale = 0.5;
 
 
+#include <signal.h>
+static void sig_int_catch(int);
+static void sig_abrt_catch(int);
+static void sig_pipe_catch(int);
+
+
+
+
 int main(int argc, char* argv[])
 {
+	if(SIG_ERR == signal(SIGINT, sig_int_catch))
+	{
+		perror("failed to set signal handler\n");
+		return -1;
+	}
+	
+	if(SIG_ERR == signal(SIGABRT, sig_abrt_catch))
+	{
+		perror("failed to set signal handler\n");
+		return -1;
+	}
+	if(SIG_ERR == signal(SIGPIPE, sig_pipe_catch))
+	{
+		perror("failed to set signal handler\n");
+		return -1;
+	}
+
 	cout << "usage:" << endl;
 	cout << "\t" << argv[0] << " <pyramid scale> " << " <factor> " <<  endl;
 	
@@ -156,3 +181,17 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+void sig_int_catch(int sig)
+{
+	printf("catch signal %d\n", sig);
+	exit(-1);
+}
+
+void sig_abrt_catch(int sig)
+{
+	printf("catch signal %d\n", sig);
+}
+void sig_pipe_catch(int sig)
+{
+	printf("catch signal %d\n", sig);
+}

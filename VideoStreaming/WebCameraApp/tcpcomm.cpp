@@ -68,6 +68,7 @@ void doTCPSocket()
 		perror("socket");
 		::exit(-1);
 	}
+    DUMP_VAR(listen_fd);
 	
 	
 	memset( &servaddr,0x0,sizeof(servaddr));
@@ -81,22 +82,27 @@ void doTCPSocket()
 		perror("bind");
 		::exit(-1);
 	}
+    DUMP_VAR(listen_fd);
 	listen(listen_fd, 10);
+    DUMP_VAR(listen_fd);
 	if(0 > ret)
 	{
         DUMP_VAR(ret);
 		perror("listen");
 		::exit(-1);
 	}
+    DUMP_VAR(listen_fd);
 
 	
     while(true)
     {
-		int comm_fd;
+		int comm_fd = 0;
+        DUMP_VAR(comm_fd);
 		comm_fd = accept(listen_fd, (struct sockaddr*) NULL, NULL);
         DUMP_VAR(comm_fd);
     	char data[1024*1024] = {0};
         int size = read(comm_fd,&data,sizeof(data));
+    	close(comm_fd);
         DUMP_VAR(size);
         if(0 < size)
         {
@@ -108,7 +114,6 @@ void doTCPSocket()
             perror("read");
             break;
         }
-    	
 	}
 	close(listen_fd);
 }
