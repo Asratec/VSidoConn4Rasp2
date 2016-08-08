@@ -11,9 +11,9 @@ VSID_NGINX += nginx.vsido.web.server
 VSID_NGINX += nginx.vsido.web.debug
 
 
-.PHONY:service $(VSID_RC) $(VSID_NGINX) cmdline.cp inittab.cp
+.PHONY:service $(VSID_RC) $(VSID_NGINX) inittab.cp
 
-service:copy.rc copy.nginx cmdline.cp inittab.cp $(VSID_RC) $(VSID_NGINX)
+service:copy.rc copy.nginx inittab.cp $(VSID_RC) $(VSID_NGINX)
 	sync
 copy.rc:
 	cp -f ./vsido.*.rc /etc/init.d/
@@ -26,8 +26,6 @@ $(VSID_RC):
 copy.nginx:
 	cp -f ./nginx.* /etc/nginx/sites-available/
 	
-cmdline.cp:
-	cp -f ./cmdline.txt /boot/cmdline.txt
 inittab.cp:
 	cp -f ./inittab /etc/inittab
 		

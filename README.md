@@ -4,7 +4,8 @@ V-Sido CONNECT Sample Code For Raspbery pi 2 Board
 
 Raspbery pi 2 Boardの準備.
   動作確認済みファームウェア  
-   http://director.downloads.raspberrypi.org/raspbian/images/raspbian-2015-02-17/2015-02-16-raspbian-wheezy.zip  
+   http://director.downloads.raspberrypi.org/raspbian/images/raspbian-2016-05-31/2016-05-27-raspbian-jessie.zip  
+   
 
 
 	

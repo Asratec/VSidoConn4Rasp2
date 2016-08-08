@@ -620,7 +620,9 @@
 			//s_camera=new Camera({'ip':s_edison_ip});	// ■カメラ画像をどのipから取得するか	
 			s_camera=new Camera();
 			s_camera.listen(remotecallback);
-			s_camera.viewMarkerDetect($('#camera-image'));
+			//s_camera.viewMarkerDetect($('#camera-image'));
+			var cameraImg = document.getElementById("camera-image");
+			s_camera.viewMarkerDetect(cameraImg);
 			
 			//s_r2r=new BattleR2R({'i':s_edison_ip,'you':s_edison_ip_enemy},remotecallback);	//■対戦する自分・相手のipの指定
 			s_r2r=new BattleR2R({'you':s_edison_ip_enemy},remotecallback);	// 対戦相手のip
