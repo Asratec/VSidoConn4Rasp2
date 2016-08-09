@@ -98,81 +98,183 @@ var vsido = vsido || {
 * @constructor
 * @param {object} config 接続設定情報
 * <pre><code>
-* {'ip':'address String of ip'};
+* {'ip':'address String of ip','debug':boolean};
 * </code></pre>
+* @param {function} onOpen 接続完了通知
 * @example
 * <pre><code>
-* var connect = new vsido.Connect({'ip':'192.168.11.5'});
+* var connect = new vsido.Connect({'ip':'192.168.11.5','debug':true});
 * </code></pre>
 **/
-vsido.Connect = function(config){
-	this.ip = window.location.hostname;
+vsido.Connect = function(config) {
+	// call back time out 1 second
+	this.CALL_BACK_TIME_OUT = 1000;
 	this.ws = null;
-	this.cb = null;
+	this.cb = new Array();
 	this.VSidoWebNotifyCallBack = null;
 	this.ready = false;
 	this.requestDate = new Date();
-	this.waitCmd = null;
+	this.waitCmd = new Array();
+	this.onOpen = null;
+	this.onOpenIntervalVar = null;
 	this.openWS = function(self) {
 		self.ws = new WebSocket('ws://' + self.ip +':20080','vsido-cmd');
 		self.ws.onerror = function (error) {
-			console.error(error);
+			console.error('[vsido.Connect.error]onerror:',error);
 		};
 		// Log messages from the server
 		self.ws.onmessage = function (evt) {
-			var remoteMsg = JSON.parse( evt.data );
+			if (self.debug) {
+				console.log('[vsido.Connect.debug]onmessage:',evt);
+			}
+			var remoteMsg = JSON.parse(evt.data);
 			var responseDate = new Date();
 			var timeResponse = responseDate.getTime() - self.requestDate.getTime();
-			if(self.cb){
-				self.cb(remoteMsg,timeResponse);
-			}
-			if(self.VSidoWebNotifyCallBack && remoteMsg['type'] == 'StatusNotify'){
+			self.invokeCallBack_(remoteMsg,timeResponse);
+			if (self.VSidoWebNotifyCallBack && remoteMsg['type'] == 'StatusNotify') {
 				self.VSidoWebNotifyCallBack(remoteMsg);
 			}
 		};
-		self.ws.onopen = function (evt) {
-			self.ready = true;
-			if(self.waitCmd){
-				self.send();
-				self.waitCmd = null;
+		self.ws.onopen = function(evt) {
+			if (self.debug) {
+				console.log('[vsido.Connect.debug]onopen:',evt);
 			}
+			self.onOpenIntervalVar = setInterval(self.wsOpenReadyCheck_,10,self);
+			self.ready = true;
 		};
-		self.ws.onclose = function(evt){
-			var remoteMsg = JSON.parse( evt.data );
+		self.ws.onclose = function(evt) {
+			if (self.debug) {
+				console.log('[vsido.Connect.debug]onclose:',evt);
+			}
+			var remoteMsg = JSON.parse(evt.data);
 			self.ready = false;
 			self.ws = null;
 		}
 	};
-	if(config && config['ip']) {
+	if (config && config['debug']) {
+		this.debug = true;
+	} else {
+		this.debug = false;
+	}
+	this.ip = window.location.hostname;
+	if (config && config['ip']) {
 		this.ip = config['ip'];
 	}
 	this.openWS(this);
 };
 
 /**
+* V-Sido CONNECTと接続完了を通知する。
+* @method onOpen
+* @param {object} evt イベント
+* @example
+* <pre><code>
+* var connect = new vsido.Connect({'ip':'192.168.11.5','debug':true});
+* connect.onOpen = function(evt) {
+*	console.log(evt);
+* };
+* </code></pre>
+**/
+vsido.Connect.prototype.onOpen = function(evt) {
+};
+
+/*
+* private method
+*/
+vsido.Connect.prototype.wsOpenReadyCheck_ = function(self) {
+	if (self.ws && 1 == self.ws.readyState) {
+		if ('function' == typeof self.onOpen) {
+			self.onOpen(self.ws);
+		}
+		for (var i = 0; i < self.waitCmd.length;i++) {
+			self.send(self.waitCmd[i]);
+		}
+		self.waitCmd = new Array();
+		if (self.onOpenIntervalVar) {
+			clearInterval(self.onOpenIntervalVar);
+			self.onOpenIntervalVar = null;
+		}
+	}
+};
+
+
+
+/**
 * V-Sido CONNECTにコマンドを送信する。
+* ※接続方式より通信速度の差があるため。
+* ※送信速度を適切に調整してください。
+* ※秒間20回目安。
 * @method send
 * @param {object} 　　　　cmd コマンド
 * @param {function} 　cb 返事のコールバック
 * @example
 * <pre><code>
-* var connect = new vsido.Connect({'ip':'192.168.11.5'});
+* var connect = new vsido.Connect();
+* connect.open({'ip':'192.168.11.5'});
 * var angle =  new vsido.SetServoAngle(15);
 * angle.addAngle(2,100.5);
-* connect.send(angle,function(response){
+* connect.send(angle,function(response) {
 *   console.log(JSON.stringify(response));
 * });
 * </code></pre>
 **/
-vsido.Connect.prototype.send = function(cmd,cb){
+vsido.Connect.prototype.send = function(cmd,cb) {
 	this.requestDate = new Date();
-	this.cb = cb;
-	if(null != this.ws && false != this.ready) {
+	this.addCallBack_(cb)
+	if (null != this.ws && false != this.ready) {
+		if (this.debug) {
+			console.log('[vsido.Connect.debug]send:',JSON.stringify(cmd));
+		}
 		this.ws.send(JSON.stringify(cmd));
+	} else {
+		if (null == this.ws) {
+			this.openWS(this);
+		}
+		console.warn('WebSocket is opening,command  will be sent later.');
+		this.waitCmd.push(cmd);
 	}
-	else{
-		this.openWS(this);
-		this.waitCmd = cmd;
+};
+/*
+* private method
+*/
+vsido.Connect.prototype.addCallBack_ = function(cb) {
+	this.requestDate = new Date();
+	// check timeout event.
+	var timeOutPosition = -1;
+	for(var i = 0; i < this.cb.length; i++) {
+		var cbSaved = this.cb[i];
+		if (cbSaved && (cbSaved.stamp - this.requestDate.getTime()) > this.CALL_BACK_TIME_OUT) {
+			timeOutPosition = i;
+			break;
+		}
+	}
+	if (-1 != timeOutPosition) {
+		// give a time out message to all time out callback.
+		for(var i = timeOutPosition; i < this.cb.length; i++) {
+			var cbSaved = this.cb[i];
+			timeOutPosition = i;
+			var timeOutMessage = {'type': 'timeout'};
+			cbSaved.cb(timeOutMessage);
+		}
+		// delete time out callback.
+		var number = this.cb.length - timeOutPosition;
+		this.cb.splice(timeOutPosition,number);
+	}
+	if (cb) {
+		var cbSave = {'cb':cb,'stamp':this.requestDate.getTime()};
+		this.cb.push(cbSave);
+	}
+};
+/*
+* private method
+*/
+vsido.Connect.prototype.invokeCallBack_ = function(evt) {
+	if (0 < this.cb.length) {
+		var cbSaved = this.cb[0];
+		if (cbSaved.cb && 'function' == typeof cbSaved.cb) {
+			cbSaved.cb(evt);
+		}
+		this.cb.splice(0,1);
 	}
 };
 
@@ -188,11 +290,11 @@ vsido.Connect.prototype.send = function(cmd,cb){
 * var angle =  new vsido.SetServoAngle(10);
 * </code></pre>
 **/
-vsido.SetServoAngle = function (cycle){
+vsido.SetServoAngle = function(cycle) {
 	this.command='SetServoAngle';
-	if('number' == typeof cycle && cycle >= 1  && cycle <= 100) {
+	if ('number' == typeof cycle && cycle >= 1  && cycle <= 100) {
 		this.cycle= cycle;
-	}else{
+	} else {
 		this.cycle= 10;
 	}
 	this.servo = new Array();
@@ -209,16 +311,16 @@ vsido.SetServoAngle = function (cycle){
 * angle.addAngle(2,100.5);
 * </code></pre>
 **/
-vsido.SetServoAngle.prototype.addAngle =  function(sid,angle){
+vsido.SetServoAngle.prototype.addAngle = function(sid,angle) {
 	var data = {};
-	if('number' == typeof sid && sid >= 1 && sid <= 254){
+	if ('number' == typeof sid && sid >= 1 && sid <= 254) {
 		data['sid'] = sid;
-	}else{
+	} else {
 		return;
 	}
-	if('number' == typeof angle && angle >= -180.0 && angle <= 180.0){
+	if ('number' == typeof angle && angle >= -180.0 && angle <= 180.0) {
 		data['angle'] = angle;
-	}else{
+	} else {
 		return;
 	}
 	this.servo.push(data);
@@ -247,8 +349,8 @@ vsido.GetServoAngle = function() {
 * angle.addSID(2);
 * </code></pre>
 **/
-vsido.GetServoAngle.prototype.addSID =  function(sid){
-	if('number' == typeof sid && sid >= 1 && sid <= 254){
+vsido.GetServoAngle.prototype.addSID =  function(sid) {
+	if ('number' == typeof sid && sid >= 1 && sid <= 254) {
 		this.servo.push(sid);
 	}
 };
@@ -282,19 +384,19 @@ vsido.SetServoCompliance = function() {
 **/
 vsido.SetServoCompliance.prototype.addComp = function(sid,cpCW,cpCCW) {
 	var data = {};
-	if('number' == typeof sid && sid >= 1 && sid <= 254){
+	if ('number' == typeof sid && sid >= 1 && sid <= 254) {
 		data['sid'] = sid;
-	}else{
+	} else {
 		return;
 	}
-	if('number' == typeof cpCW && cpCW >= 1 && cpCW <= 254){
+	if ('number' == typeof cpCW && cpCW >= 1 && cpCW <= 254) {
 		data['cpCW'] = cpCW;
-	}else{
+	} else {
 		return;
 	}
-	if('number' == typeof cpCCW && cpCCW >= 1 && cpCCW <= 254){
+	if ('number' == typeof cpCCW && cpCCW >= 1 && cpCCW <= 254) {
 		data['cpCCW'] = cpCCW;
-	}else{
+	} else {
 		return;
 	}
 	this.servo.push(data);
@@ -329,19 +431,19 @@ vsido.SetServoMinMaxAngle = function() {
 **/
 vsido.SetServoMinMaxAngle.prototype.addMinMax = function(sid,min,max) {
 	var data = {};
-	if('number' == typeof sid && sid >= 1 && sid <= 254){
+	if ('number' == typeof sid && sid >= 1 && sid <= 254) {
 		data['sid'] = sid;
-	}else{
+	} else {
 		return;
 	}
-	if('number' == typeof min && min >= -180.0 && min <= 180.0){
+	if ('number' == typeof min && min >= -180.0 && min <= 180.0) {
 		data['min'] = min;
-	}else{
+	} else {
 		return;
 	}
-	if('number' == typeof max && max >= -180.0 && max <= 180.0){
+	if ('number' == typeof max && max >= -180.0 && max <= 180.0) {
 		data['max'] = max;
-	}else{
+	} else {
 		return;
 	}
 	this.servo.push(data);
@@ -372,11 +474,11 @@ vsido.GetServoInfo = function() {
 * info.addSID(2);
 * </code></pre>
 **/
-vsido.GetServoInfo.prototype.addSID =  function(sid){
-	if(this.servo.length > 3) {
+vsido.GetServoInfo.prototype.addSID =  function(sid) {
+	if (this.servo.length > 3) {
 		return;
 	}
-	if('number' == typeof sid && sid >= 1 && sid <= 254){
+	if ('number' == typeof sid && sid >= 1 && sid <= 254) {
 		this.servo.push(sid);
 	}
 };
@@ -390,8 +492,8 @@ vsido.GetServoInfo.prototype.addSID =  function(sid){
 * info.addItem('all');
 * </code></pre>
 **/
-vsido.GetServoInfo.prototype.addItem = function(item){
-	if('string' == typeof item && -1 != vsido.SERVO_INFO_ITEM.indexOf(item)){
+vsido.GetServoInfo.prototype.addItem = function(item) {
+	if ('string' == typeof item && -1 != vsido.SERVO_INFO_ITEM.indexOf(item)) {
 		this.item.push(item);
 	}
 }
@@ -421,8 +523,8 @@ vsido.SetFeedbackID = function() {
 * fbID.addSID(2);
 * </code></pre>
 **/
-vsido.SetFeedbackID.prototype.addSID =  function(sid){
-	if('number' == typeof sid && sid >= 1 && sid <= 254){
+vsido.SetFeedbackID.prototype.addSID =  function(sid) {
+	if ('number' == typeof sid && sid >= 1 && sid <= 254) {
 		this.servo.push(sid);
 	}
 };
@@ -452,8 +554,8 @@ vsido.GetServoFeedback = function() {
 * feedback.addItem('port_type');
 * </code></pre>
 **/
-vsido.GetServoFeedback.prototype.addItem =  function(item){
-	if('string' == typeof item && -1 != vsido.SERVO_INFO_ITEM.indexOf(item)){
+vsido.GetServoFeedback.prototype.addItem =  function(item) {
+	if ('string' == typeof item && -1 != vsido.SERVO_INFO_ITEM.indexOf(item)) {
 		this.item.push(item);
 	}
 };
@@ -484,14 +586,14 @@ vsido.SetVIDValue = function() {
 * vid.addValue('RS485_Baudrate','B_115200');
 * </code></pre>
 **/
-vsido.SetVIDValue.prototype.addValue =  function(vid,value){
-	if('string' == typeof vid && -1 != vsido.VID_ITEM.indexOf(vid)){
+vsido.SetVIDValue.prototype.addValue =  function(vid,value) {
+	if ('string' == typeof vid && -1 != vsido.VID_ITEM.indexOf(vid)) {
 		var data = {};
-		if('string' == typeof value && -1 != vsido.VID_VALUE.indexOf(value)){
+		if ('string' == typeof value && -1 != vsido.VID_VALUE.indexOf(value)) {
 			data[vid] = value;
 			this.vid.push(data);
 		}
-		if('number' == typeof value ){
+		if ('number' == typeof value) {
 			data[vid] = value;
 			this.vid.push(data);
 		}
@@ -522,8 +624,8 @@ vsido.GetVIDValue = function() {
 * vid.addVID('RS485_Baudrate');
 * </code></pre>
 **/
-vsido.GetVIDValue.prototype.addVID =  function(vid){
-	if('string' == typeof vid && -1 != vsido.VID_ITEM.indexOf(vid)){
+vsido.GetVIDValue.prototype.addVID =  function(vid) {
+	if ('string' == typeof vid && -1 != vsido.VID_ITEM.indexOf(vid)) {
 		this.vid.push(vid);
 	}
 };
@@ -569,14 +671,14 @@ vsido.SetGPIOValue = function() {
 **/
 vsido.SetGPIOValue.prototype.setValue = function(port,val) {
 	var data = {};
-	if('number' == typeof port && port >= 4 && port <= 7){
+	if ('number' == typeof port && port >= 4 && port <= 7) {
 		data['port'] = port;
-	}else{
+	} else {
 		return;
 	}
-	if('number' == typeof val && val >= 0 && val <= 1){
+	if ('number' == typeof val && val >= 0 && val <= 1) {
 		data['val'] = val;
-	}else{
+	} else {
 		return;
 	}
 	this.gpio.push(data);
@@ -608,14 +710,14 @@ vsido.SetPWMPulse = function() {
 **/
 vsido.SetPWMPulse.prototype.setWidth = function(port,width) {
 	var data = {};
-	if('number' == typeof port && port >= 6 && port <= 7){
+	if ('number' == typeof port && port >= 6 && port <= 7) {
 		data['port'] = port;
-	}else{
+	} else {
 		return;
 	}
-	if('number' == typeof width && width >= 0 && width <= 65535){
+	if ('number' == typeof width && width >= 0 && width <= 65535) {
 		data['width'] = width;
-	}else{
+	} else {
 		return;
 	}
 	this.pwm.push(data);
@@ -633,14 +735,14 @@ vsido.SetPWMPulse.prototype.setWidth = function(port,width) {
 **/
 vsido.SetPWMPulse.prototype.setDuty = function(port,duty) {
 	var data = {};
-	if('number' == typeof port && port >= 6 && port <= 7){
+	if ('number' == typeof port && port >= 6 && port <= 7) {
 		data['port'] = port;
-	}else{
+	} else {
 		return;
 	}
-	if('number' == typeof duty && duty >= 0.0 && duty <= 1.0){
+	if ('number' == typeof duty && duty >= 0.0 && duty <= 1.0) {
 		data['duty'] = duty;
-	}else{
+	} else {
 		return;
 	}
 	this.pwm.push(data);
@@ -675,11 +777,11 @@ vsido.CheckConnectedServo = function() {
 * var ik = new vsido.SetIK({'position':true});
 * </code></pre>
 **/
-vsido.SetIK = function (ikflag){
+vsido.SetIK = function (ikflag) {
 	this.command='SetIK';
-	if(ikflag){
+	if (ikflag) {
 		this.ikflag = ikflag;
-	}else {
+	} else {
 		this.ikflag = {
 			'position':false,'rotation':false,'torque':false
 		};
@@ -689,24 +791,24 @@ vsido.SetIK = function (ikflag){
 /*
 	private function.
 */
-vsido.SetIK.prototype.addKDTbyTag = function(kid,tag,x,y,z){
+vsido.SetIK.prototype.addKDTbyTag_ = function(kid,tag,x,y,z) {
 	var data = {};
 	var dataIndex= -1;
-	if(kid){
-		for(var i = 0; i < this.kdt.length; i++){
-			if(this.kdt[i]&& kid == this.kdt[i]['kid']){
+	if (kid) {
+		for(var i = 0; i < this.kdt.length; i++) {
+			if (this.kdt[i]&& kid == this.kdt[i]['kid']) {
 				dataIndex = i;
 				data = this.kdt[i];
 				break;
 			}
 		}
-		if(-1 == dataIndex) {
-			if( 'string' == typeof kid && -1 != vsido.KID_ITEM.indexOf(kid)){
+		if (-1 == dataIndex) {
+			if ('string' == typeof kid && -1 != vsido.KID_ITEM.indexOf(kid)) {
 				data['kid'] = kid;
-			}else{
-				if('number' == typeof kid && kid >= 0 && kid <= 15){
+			} else {
+				if ('number' == typeof kid && kid >= 0 && kid <= 15) {
 					data['kid'] = kid;
-				}else {
+				} else {
 					return;
 				}
 			}
@@ -717,25 +819,25 @@ vsido.SetIK.prototype.addKDTbyTag = function(kid,tag,x,y,z){
 	}
 	
 	data[tag] = {}
-	if('number' == typeof x && x >= -100 && x <= 100){
+	if ('number' == typeof x && x >= -100 && x <= 100) {
 		data[tag]['x'] = x;
 	}
 	else {
 		return;
 	}
-	if('number' == typeof y && y >= -100 && y <= 100){
+	if ('number' == typeof y && y >= -100 && y <= 100) {
 		data[tag]['y'] = y;
 	}
 	else {
 		return;
 	}
-	if('number' == typeof z && z >= -100 && z <= 100){
+	if ('number' == typeof z && z >= -100 && z <= 100) {
 		data[tag]['z'] = z;
 	}
 	else {
 		return;
 	}
-	if(-1 != dataIndex) {
+	if (-1 != dataIndex) {
 		this.kdt.splice(dataIndex,1);
 	}
 	this.kdt.push(data);
@@ -755,7 +857,7 @@ vsido.SetIK.prototype.addKDTbyTag = function(kid,tag,x,y,z){
 * </code></pre>
 **/
 vsido.SetIK.prototype.setPosition = function(kid,x,y,z) {
-	var data = this.addKDTbyTag(kid,'position',x,y,z);
+	var data = this.addKDTbyTag_(kid,'position',x,y,z);
 }
 
 /**
@@ -772,7 +874,7 @@ vsido.SetIK.prototype.setPosition = function(kid,x,y,z) {
 * </code></pre>
 **/
 vsido.SetIK.prototype.setRotation = function(kid,x,y,z) {
-	var data = this.addKDTbyTag(kid,'rotation',x,y,z);
+	var data = this.addKDTbyTag_(kid,'rotation',x,y,z);
 }
 
 /**
@@ -789,7 +891,7 @@ vsido.SetIK.prototype.setRotation = function(kid,x,y,z) {
 * </code></pre>
 **/
 vsido.SetIK.prototype.setTorque = function(kid,x,y,z) {
-	var data = this.addKDTbyTag(kid,'torque',x,y,z);
+	var data = this.addKDTbyTag_(kid,'torque',x,y,z);
 }
 
 /**
@@ -807,9 +909,9 @@ vsido.SetIK.prototype.setTorque = function(kid,x,y,z) {
 **/
 vsido.GetIK = function(ikflag) {
 	this.command = "GetIK";
-	if(ikflag){
+	if (ikflag) {
 		this.ikflag = ikflag;
-	}else {
+	} else {
 		this.ikflag = {
 			'position':false,'rotation':false,'torque':false
 		};
@@ -826,12 +928,12 @@ vsido.GetIK = function(ikflag) {
 * ik.addKID(2);
 * </code></pre>
 **/
-vsido.GetIK.prototype.addKID =  function(kid){
-	if('string' == typeof kid && -1 != vsido.KID_ITEM.indexOf(kid)){
+vsido.GetIK.prototype.addKID =  function(kid) {
+	if ('string' == typeof kid && -1 != vsido.KID_ITEM.indexOf(kid)) {
 		this.kid.push(kid);
 		return;
 	}
-	if('number' == typeof kid && kid >= 0 && kid <= 15){
+	if ('number' == typeof kid && kid >= 0 && kid <= 15) {
 		this.kid.push(kid);
 	}
 };
@@ -850,14 +952,14 @@ vsido.GetIK.prototype.addKID =  function(kid){
 **/
 vsido.Walk = function(forward,turnCW) {
 	this.command = 'Walk';
-	if('number' == typeof forward && forward >= -100  && forward <= 100) {
+	if ('number' == typeof forward && forward >= -100  && forward <= 100) {
 		this.forward= forward;
-	}else{
+	} else {
 		this.forward= 0;
 	}
-	if('number' == typeof turnCW && turnCW >= -100  && turnCW <= 100) {
+	if ('number' == typeof turnCW && turnCW >= -100  && turnCW <= 100) {
 		this.turnCW= turnCW;
-	}else{
+	} else {
 		this.turnCW= 0;
 	}
 }
@@ -902,7 +1004,7 @@ vsido.GetVoltage = function() {
 **/
 vsido.Binary = function(op) {
 	this.command = 'Binary';
-	if('number' == typeof op) {
+	if ('number' == typeof op) {
 		this.op = op;
 	} else {
 		this.op = 0;
@@ -929,6 +1031,6 @@ vsido.Binary = function(op) {
 * </code></pre>
 **/
 vsido.execRaw = function() {
-	this.command = 'Raw',
+	this.command = 'Raw';
 	this.exec = new Array();
 }
